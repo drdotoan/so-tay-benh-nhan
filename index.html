@@ -114,6 +114,9 @@ const JSQR         = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
 
 const SETTING = {PK:'Phòng khám ngoài', NT:'Nội trú'};
 const STATUS  = {active:'Đang theo dõi', closed:'Đã kết thúc / ra viện'};
+const HEMA=new Set(['WBC','NEU%','NEU#','LYM%','LYM#','MONO%','MONO#','EOS%','EOS#','BASO%','BASO#','RBC','HGB','HCT','PLT','MCV','MCH','MCHC','RDW','MPV','PCT','PDW','NEU','LYM','MONO','EOS','BASO']);
+const labGroup=t=>HEMA.has(t)?'hh':'sh';
+const MIC_F=[{k:'date',label:'Ngày',type:'date',req:true,half:true},{k:'text',label:'Kết quả vi sinh',type:'textarea',req:true}];
 const MODALITY = ['Siêu âm','X-quang','CT','MRI','Nội soi','Điện tim','Giải phẫu bệnh','Khác'];
 
 /* Danh mục xét nghiệm: tên hiển thị, đơn vị, khoảng tham chiếu MẶC ĐỊNH, các tên gọi (không dấu, chữ thường).
@@ -269,7 +272,7 @@ function homeHTML(){
   </div>
   <div class="card"><h2>⚠️ Kết quả mới nhất còn bất thường (7 ngày qua)</h2>
     ${ab.length?`<table><tr><th>Bệnh nhân</th><th>Ngày</th><th>XN</th><th>Kết quả</th></tr>
-      ${ab.slice(0,40).map(({p,l,f})=>`<tr class="click" onclick="openPatient('${p.id}','labs')"><td>${esc(p.name)}</td><td>${fmt(l.date)}</td><td>${esc(l.test)}</td><td class="${f}">${l.value} ${esc(l.unit||'')} ${arrow(f)}</td></tr>`).join('')}</table>`:'<div class="empty">Không có.</div>'}
+      ${ab.slice(0,40).map(({p,l,f})=>`<tr class="click" onclick="openPatient('${p.id}','${labGroup(l.test)}')"><td>${esc(p.name)}</td><td>${fmt(l.date)}</td><td>${esc(l.test)}</td><td class="${f}">${l.value} ${esc(l.unit||'')} ${arrow(f)}</td></tr>`).join('')}</table>`:'<div class="empty">Không có.</div>'}
   </div>`;
 }
 function listHTML(){
@@ -351,9 +354,10 @@ function setTab(t){ state.tab=t; renderPanel(); }
 function renderPanel(){
   const p=P(state.open); if(!p) return closePanel();
   const a=age(p.yob);
-  const T=[['info','Thông tin'],['visits',`Diễn biến (${(p.visits||[]).length})`],['labs',`Xét nghiệm (${(p.labs||[]).length})`],['imaging',`CĐHA (${(p.imaging||[]).length})`],['meds',`Thuốc (${(p.meds||[]).filter(m=>m.status!=='stopped').length})`],
+  const nl=g=>(p.labs||[]).filter(l=>labGroup(l.test)===g).length, ni=m=>(p.imaging||[]).filter(x=>m(x.modality)).length;
+  const T=[['info','Thông tin'],['visits',`Diễn biến (${(p.visits||[]).length})`],['hh',`Huyết học (${nl('hh')})`],['sh',`Sinh hóa (${nl('sh')})`],['vs',`Vi sinh (${(p.micro||[]).length})`],['img',`CĐHA (${ni(m=>m!=='Nội soi'&&m!=='Giải phẫu bệnh')})`],['endo',`Nội soi (${ni(m=>m==='Nội soi')})`],['gpb',`Giải phẫu bệnh (${ni(m=>m==='Giải phẫu bệnh')})`],['meds',`Thuốc (${(p.meds||[]).filter(m=>m.status!=='stopped').length})`],
            ['files',`Tệp (${(p.files||[]).length})`],['tasks',`Việc cần làm (${(p.tasks||[]).filter(k=>!k.done).length})`]];
-  const B={info:infoHTML,visits:visitsHTML,labs:labsHTML,imaging:imagingHTML,meds:medsHTML,files:filesHTML,tasks:tasksHTML}[state.tab](p);
+  const B={info:infoHTML,visits:visitsHTML,hh:p=>labsHTML(p,'hh'),sh:p=>labsHTML(p,'sh'),vs:microHTML,img:p=>imagingHTML(p,'img'),endo:p=>imagingHTML(p,'endo'),gpb:p=>imagingHTML(p,'gpb'),meds:medsHTML,files:filesHTML,tasks:tasksHTML}[state.tab](p);
   $('#panel').innerHTML=`<div class="phead"><div class="in">
       <button class="ghost" style="padding-left:0" onclick="closePanel()">← Quay lại</button>
       <div style="font-size:18px;font-weight:700">${esc(p.name)}</div>
@@ -413,8 +417,8 @@ async function saveLabs(id){
   if(rs.some(r=>!r)) return $('#lerr2').textContent='Có dòng không đọc được — sửa hoặc xóa dòng đó.';
   const p=P(id); (p.labs||=[]); rs.forEach(r=>p.labs.push({id:uid(),date:d,...r})); touch(p); closeModal(); await commit();
 }
-function labsHTML(p){
-  const labs=p.labs||[], tests=[...new Set(labs.map(l=>l.test))];
+function labsHTML(p,grp){
+  const labs=(p.labs||[]).filter(l=>labGroup(l.test)===grp), tests=[...new Set(labs.map(l=>l.test))];
   if(state.labTest&&!tests.includes(state.labTest)) state.labTest=null;
   if(!state.labTest&&tests.length) state.labTest=tests[0];
   const latest=tests.map(t=>{ const arr=labs.filter(l=>l.test===t).sort((a,b)=>a.date.localeCompare(b.date)); return {t,arr,last:arr[arr.length-1]}; });
@@ -455,10 +459,12 @@ function chartSVG(pts,lo,hi){
 const IF=[{k:'date',label:'Ngày',type:'date',req:true,half:true},{k:'modality',label:'Loại',type:'select',opts:Object.fromEntries(MODALITY.map(m=>[m,m])),half:true},
   {k:'region',label:'Vùng / bộ phận',half:true},{k:'acc',label:'Mã chụp (tra lại trên PACS)',half:true},{k:'result',label:'Kết luận',type:'textarea',req:true},{k:'link',label:'Đường dẫn xem ảnh (tùy chọn, dán hoặc đọc từ QR)',ph:'https://…'}];
 const safeUrl = u => (/^https?:\/\//i.test(String(u||'').trim()) ? String(u).trim() : '');
-function imagingHTML(p){
-  const v=[...(p.imaging||[])].sort((a,b)=>b.date.localeCompare(a.date));
+const IMG_GRP=g=>x=>g==='endo'?x.modality==='Nội soi':g==='gpb'?x.modality==='Giải phẫu bệnh':(x.modality!=='Nội soi'&&x.modality!=='Giải phẫu bệnh');
+const IMG_DEF={img:'Siêu âm',endo:'Nội soi',gpb:'Giải phẫu bệnh'};
+function imagingHTML(p,grp){
+  const v=[...(p.imaging||[])].filter(IMG_GRP(grp)).sort((a,b)=>b.date.localeCompare(a.date));
   return `<div style="margin-bottom:10px">${uploadBtn(p.id)}</div>
-  <div class="row" style="margin-bottom:10px"><button onclick="addImg('${p.id}')">⌨︎ Nhập tay</button><button onclick="qrImg('${p.id}')">📷 Đọc QR từ ảnh</button></div>
+  <div class="row" style="margin-bottom:10px"><button onclick="addImg('${p.id}','${IMG_DEF[grp]}')">⌨︎ Nhập tay</button><button onclick="qrImg('${p.id}')">📷 Đọc QR từ ảnh</button></div>
   <div class="note" style="margin:0 0 10px">Chỉ lưu đường dẫn để mở lại, <b>không lưu ảnh chụp</b>. Đường dẫn có thể cho phép xem ảnh, nên đừng chia sẻ cho người khác.</div>
   <div class="card">${v.length?v.map(x=>{ const u=safeUrl(x.link); return `<div class="item"><div class="grow">
     <div><b>${fmt(x.date)}</b> <span class="badge">${esc(x.modality)}</span>${esc(x.region||'')} ${x.acc?`<span class="mut">· Mã: ${esc(x.acc)}</span>`:''}
@@ -481,7 +487,7 @@ function qrImg(pid){
   };
   inp.click();
 }
-function addImg(id){ formModal('Thêm kết quả CĐHA',IF,{date:today(),modality:'Siêu âm'},async o=>{ const p=P(id); (p.imaging||=[]).push({id:uid(),...o}); touch(p); await commit(); }); }
+function addImg(id,mod='Siêu âm'){ formModal('Thêm kết quả',IF,{date:today(),modality:mod},async o=>{ const p=P(id); (p.imaging||=[]).push({id:uid(),...o}); touch(p); await commit(); }); }
 function editImg(id,iid){ const p=P(id), x=p.imaging.find(v=>v.id===iid); formModal('Sửa kết quả CĐHA',IF,x,async o=>{ Object.assign(x,o); touch(p); await commit(); }); }
 
 /* ---------- Thuốc & đơn thuốc ---------- */
@@ -556,7 +562,14 @@ function allTasksHTML(){
 }
 
 /* ---------- Tệp đính kèm ---------- */
-const KIND={lab:'Xét nghiệm',img:'CĐHA',info:'Thông tin BN',other:'Khác'};
+function microHTML(p){
+  const v=[...(p.micro||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  return `<div style="margin-bottom:10px">${uploadBtn(p.id)}</div>
+  <div class="row" style="margin-bottom:10px"><button onclick="addMicro('${p.id}')">⌨︎ Nhập tay</button></div>
+  <div class="card">${v.length?v.map(x=>`<div class="item"><div class="grow"><div><b>${fmt(x.date)}</b> <span class="badge">Vi sinh</span>${x.fileId?` <a href="#" onclick="viewFile('${x.fileId}');return false" title="Xem phiếu gốc">📎</a>`:''}</div><div style="white-space:pre-wrap">${esc(x.text)}</div></div><div><button class="sm danger" onclick="delItem('${p.id}','micro','${x.id}')">Xóa</button></div></div>`).join(''):'<div class="empty">Chưa có kết quả vi sinh.</div>'}</div>`;
+}
+function addMicro(id){ formModal('Thêm kết quả vi sinh',MIC_F,{date:today()},async o=>{ const p=P(id); (p.micro||=[]).push({id:uid(),...o}); touch(p); await commit(); }); }
+const KIND={lab:'Xét nghiệm',img:'CĐHA',vs:'Vi sinh',info:'Thông tin BN',other:'Khác'};
 function filesHTML(p){
   const v=[...(p.files||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   return `<div style="margin-bottom:10px">${uploadBtn(p.id)}</div>
@@ -786,7 +799,7 @@ function analyze(text){
   }
   const N=strip(text);
   let modality='', region='';
-  const MODS=[[/sieu\s*am/,'Siêu âm'],[/cat\s*lop|\bct\b|\bmsct\b/,'CT'],[/cong\s*huong\s*tu|\bmri\b/,'MRI'],[/x[\s\-]?quang|\bxq\b/,'X-quang'],[/noi\s*soi|soi\s*(phe\s*quan|da\s*day|dai\s*trang|truc\s*trang|thuc\s*quan|buong\s*tu|mui\s*hong|tai\s*mui|bang\s*quang|khop)/,'Nội soi'],[/dien\s*tim|dien\s*tam\s*do|\becg\b/,'Điện tim'],[/giai\s*phau\s*benh|\bgpb\b|mo\s*benh\s*hoc/,'Giải phẫu bệnh']];
+  const MODS=[[/sieu\s*am/,'Siêu âm'],[/cat\s*lop|\bct\b|\bmsct\b|\bclvt\b/,'CT'],[/cong\s*huong\s*tu|\bmri\b/,'MRI'],[/x[\s\-]?quang|\bxq\b/,'X-quang'],[/noi\s*soi|soi\s*(phe\s*quan|da\s*day|dai\s*trang|truc\s*trang|thuc\s*quan|buong\s*tu|mui\s*hong|tai\s*mui|bang\s*quang|khop)/,'Nội soi'],[/dien\s*tim|dien\s*tam\s*do|\becg\b/,'Điện tim'],[/giai\s*phau\s*benh|\bgpb\b|mo\s*benh\s*hoc/,'Giải phẫu bệnh']];
   const rawLines=text.split(/\r?\n/);
   outer: for(const [re,name] of MODS){ for(const L of rawLines){ const m=strip(L).match(re); if(m){ modality=name;
         region=L.slice(m.index+m[0].length).replace(/^[\s:.\-–]+/,'').trim();
@@ -799,7 +812,8 @@ function analyze(text){
     conclusion=text.slice(start, start+(stop>=0?stop:Math.min(tail.length,800))).trim().slice(0,1000); }
   const info=extractInfo(text);
   const isImg = !!conclusion && !!modality;
-  const kind = labs.length>=2 ? 'lab' : isImg ? 'img' : info.count>=3 ? 'info' : (conclusion||modality) ? 'img' : labs.length ? 'lab' : 'other';
+  const isVS = labs.length<2 && /\bvi\s*sinh\b|nuoi\s*cay|khang\s*sinh\s*do|\bcay\s+(mau|dom|dich|nuoc|phan)\b/.test(N);
+  const kind = isVS ? 'vs' : labs.length>=2 ? 'lab' : isImg ? 'img' : info.count>=3 ? 'info' : (conclusion||modality) ? 'img' : labs.length ? 'lab' : 'other';
   return {text, labs, kind, date:findDate(N), img:{modality:modality||'Khác', region, acc:'', result:conclusion}, info};
 }
 function matchPatient(info){
@@ -887,6 +901,7 @@ function renderReview(){
       <label>Mã chụp (nếu có)</label><input id="iacc" value="${esc(R.img.acc)}">
       <label>Kết luận</label><textarea id="ires" style="min-height:110px">${esc(R.img.result)}</textarea>
       <label>Đường dẫn xem ảnh (tùy chọn)</label><input id="ilink" value="${esc(R.img.link||'')}">`:''}
+    ${R.kind==='vs'?`<label>Nội dung kết quả vi sinh (sửa nếu cần)</label><textarea id="vres" style="min-height:140px">${esc(R.text.slice(0,3000))}</textarea>`:''}
     <details style="margin-top:10px"><summary class="mut">Toàn bộ văn bản đọc được</summary><pre style="white-space:pre-wrap;font-size:12px;max-height:240px;overflow:auto;background:#f8fafb;padding:8px;border-radius:8px">${esc(R.text)}</pre></details>
     <div class="err" id="rerr"></div>
     <div class="actions"><button onclick="pending=null;closeModal()">Hủy</button><button class="pri" onclick="saveReview()">Lưu vào hồ sơ</button></div>`);
@@ -897,6 +912,8 @@ async function saveReview(){
   const labs=R.kind==='lab'?R.labs.filter(L=>L.inc&&L.test&&L.value!=null):[];
   if(R.kind==='lab'&&!labs.length) return $('#rerr').textContent='Chưa có chỉ số hợp lệ nào được chọn.';
   if(R.kind==='img'&&!R.img.result) return $('#rerr').textContent='Chưa có nội dung kết luận.';
+  const vsText=$('#vres')?$('#vres').value.trim():'';
+  if(R.kind==='vs'&&!vsText) return $('#rerr').textContent='Chưa có nội dung kết quả vi sinh.';
   let p;
   if(R.target==='new'){
     if(!I.name) return $('#rerr').textContent='Bệnh nhân mới cần có họ tên — điền vào phần "Thông tin hành chính".';
@@ -919,8 +936,10 @@ async function saveReview(){
   }
   if(R.kind==='lab'){ (p.labs||=[]); labs.forEach(L=>p.labs.push({id:uid(),date:R.date,test:L.test,value:L.value,unit:L.unit,lo:L.lo,hi:L.hi,fileId:fid})); }
   if(R.kind==='img'){ (p.imaging||=[]).push({id:uid(),date:R.date,...R.img,fileId:fid}); }
+  if(R.kind==='vs'){ (p.micro||=[]).push({id:uid(),date:R.date,text:vsText,fileId:fid}); }
   touch(p); pending=null; closeModal(); await save();
-  openPatient(p.id, R.kind==='lab'?'labs':R.kind==='img'?'imaging':R.kind==='info'?'info':'files');
+  const tabOf=R.kind==='lab'?(labs.some(L=>labGroup(L.test)==='hh')?'hh':'sh'):R.kind==='img'?'img':R.kind==='vs'?'vs':R.kind==='info'?'info':'files';
+  openPatient(p.id, tabOf);
 }
 
 /* ============================================================
