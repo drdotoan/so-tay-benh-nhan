@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sổ tay bệnh nhân</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#1c2430;--mut:#667085;--line:#e3e7ec;--pri:#0e6b74;--pri2:#e6f2f3;--warn:#b45309;--warnbg:#fff4e5;--bad:#b42318;--badbg:#fdecea}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px}
+button.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+button.ghost{border-color:transparent;background:transparent;color:var(--pri)}
+button.danger{color:var(--bad)}
+button.sm{padding:3px 8px;font-size:13px}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff}
+textarea{min-height:90px;resize:vertical}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+header{position:sticky;top:0;z-index:5;background:var(--pri);color:#fff;display:flex;align-items:center;gap:8px;padding:10px 14px}
+header h1{font-size:17px;margin:0;flex:1}
+header button{background:rgba(255,255,255,.15);border-color:transparent;color:#fff}
+.nav{display:flex;gap:6px;padding:10px 14px 0;max-width:1000px;margin:0 auto}
+.nav button.on{background:var(--pri2);border-color:var(--pri);color:var(--pri);font-weight:600}
+main{max-width:1000px;margin:0 auto;padding:12px 14px 80px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{font-size:15px;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat b{display:block;font-size:24px;color:var(--pri)}
+.stat span{font-size:13px;color:var(--mut)}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.item{padding:10px 0;border-top:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+.item:first-child{border-top:0}
+.item .grow{flex:1;min-width:0}
+.click{cursor:pointer}
+.click:hover{background:#fafbfc}
+.mut{color:var(--mut);font-size:13px}
+.badge{display:inline-block;font-size:12px;padding:1px 7px;border-radius:99px;background:var(--pri2);color:var(--pri);margin-right:4px;white-space:nowrap}
+.badge.nt{background:#eef0ff;color:#3a3fb0}
+.badge.closed{background:#eee;color:#666}
+.badge.warn{background:var(--warnbg);color:var(--warn)}
+.badge.bad{background:var(--badbg);color:var(--bad)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chips button{border-radius:99px;font-size:13px;padding:4px 11px}
+.chips button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.empty{color:var(--mut);text-align:center;padding:18px 0;font-size:14px}
+.pname{font-weight:600}
+.H{color:var(--bad);font-weight:600}.L{color:#1d4ed8;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:500;font-size:13px}
+#panel{position:fixed;inset:0;background:var(--bg);z-index:10;overflow:auto}
+#panel .phead{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:10px 14px;z-index:2}
+#panel .phead .in{max-width:1000px;margin:0 auto}
+.tabs{display:flex;gap:4px;overflow-x:auto;margin-top:8px}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:6px 10px;white-space:nowrap;color:var(--mut)}
+.tabs button.on{border-bottom-color:var(--pri);color:var(--pri);font-weight:600}
+dl{display:grid;grid-template-columns:140px 1fr;gap:6px 12px;margin:0}
+dt{color:var(--mut);font-size:13px}dd{margin:0;white-space:pre-wrap}
+@media(max-width:560px){dl{grid-template-columns:1fr}dt{margin-top:6px}}
+#modal{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+#modal .box{background:#fff;width:100%;max-width:640px;max-height:94vh;overflow:auto;border-radius:14px 14px 0 0;padding:16px}
+@media(min-width:680px){#modal{align-items:center}#modal .box{border-radius:14px}}
+#modal h3{margin:0 0 6px;font-size:16px}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;position:sticky;bottom:-16px;background:#fff;padding:10px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin-top:6px}
+.note{font-size:12.5px;color:var(--mut);background:#f8fafb;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:12px}
+.alert{font-size:13.5px;border-radius:8px;padding:8px 10px;margin:8px 0;background:var(--warnbg);color:#7a3e00;border:1px solid #f3d3a6}
+.alert.ok{background:#ecf8f0;color:#14532d;border-color:#bfe5cc}
+svg text{font-size:12px;fill:#667085}
+.fab{position:fixed;right:16px;bottom:16px;border-radius:99px;padding:12px 18px;box-shadow:0 4px 14px rgba(0,0,0,.18);z-index:6}
+.rv table input{padding:5px 6px;font-size:13.5px;border-radius:6px}
+.rv td{padding:4px 3px;border-bottom:0}
+.sus{background:#fff1b8!important;border-color:#e0b100!important}
+.scrollx{overflow-x:auto}
+.spinner{width:34px;height:34px;border:4px solid var(--pri2);border-top-color:var(--pri);border-radius:50%;animation:sp 1s linear infinite;margin:10px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.thumb{max-width:100%;max-height:240px;border:1px solid var(--line);border-radius:8px;display:block;margin:6px 0;cursor:zoom-in}
+.upl{border:2px dashed #b9d7da;background:#f3fafa;color:var(--pri);width:100%;padding:12px;font-weight:600}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <h1>📋 Sổ tay bệnh nhân</h1>
+    <button onclick="openSettings()" title="Cài đặt & sao lưu">⚙︎</button>
+  </header>
+  <div class="nav">
+    <button data-v="home" onclick="go('home')">Tổng quan</button>
+    <button data-v="list" onclick="go('list')">Bệnh nhân</button>
+    <button data-v="tasks" onclick="go('tasks')">Việc cần làm</button>
+  </div>
+  <main id="main"><div class="spinner"></div></main>
+  <button class="pri fab" onclick="addPatient()">＋ Bệnh nhân</button>
+</div>
+
+<div id="panel" hidden></div>
+<div id="modal" hidden></div>
+
+<script>
+'use strict';
+/* ============================================================
+   CẤU HÌNH
+   ============================================================ */
+const PDFJS        = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const TESSERACT    = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+const JSQR         = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+
+const SETTING = {PK:'Phòng khám ngoài', NT:'Nội trú'};
+const STATUS  = {active:'Đang theo dõi', closed:'Đã kết thúc / ra viện'};
+const MODALITY = ['Siêu âm','X-quang','CT','MRI','Nội soi','Điện tim','Khác'];
+
+/* Danh mục xét nghiệm: tên hiển thị, đơn vị, khoảng tham chiếu MẶC ĐỊNH, các tên gọi (không dấu, chữ thường).
+   Khi phiếu kết quả có in khoảng tham chiếu thì dùng khoảng in trên phiếu.
+   Tên bắt đầu bằng ^ = chỉ nhận khi đứng đầu dòng (tránh nhầm chữ ngắn như K, Na).
+   n:null = tên cần BỎ QUA (để không nhầm, ví dụ "hồng cầu niệu" không phải "hồng cầu"). */
+const TESTS = [
+  {n:'WBC',u:'G/L',lo:4,hi:10,a:['wbc','bach cau','so luong bach cau']},
+  {n:'NEU%',u:'%',lo:45,hi:75,a:['neu%','neu %','neu','bach cau trung tinh','ty le bach cau trung tinh','% bach cau trung tinh']},
+  {n:'NEU#',u:'G/L',lo:1.8,hi:7.5,a:['neu#','neu #','so luong bach cau trung tinh']},
+  {n:'RBC',u:'T/L',lo:3.8,hi:5.5,a:['rbc','hong cau','so luong hong cau']},
+  {n:'HGB',u:'g/L',lo:120,hi:160,a:['hgb','hb','hemoglobin','huyet sac to','luong huyet sac to']},
+  {n:'HCT',u:'%',lo:36,hi:48,a:['hct','hematocrit','hematocrite']},
+  {n:'PLT',u:'G/L',lo:150,hi:400,a:['plt','tieu cau','so luong tieu cau']},
+  {n:'Glucose',u:'mmol/L',lo:3.9,hi:6.4,a:['glucose','glucose mau','duong mau','glucose (doi)']},
+  {n:'HbA1c',u:'%',lo:4,hi:6,a:['hba1c','hb a1c']},
+  {n:'Ure',u:'mmol/L',lo:2.5,hi:7.5,a:['ure','urea','ure mau','bun']},
+  {n:'Creatinin',u:'µmol/L',lo:62,hi:120,a:['creatinin','creatinine','creatinin mau']},
+  {n:'eGFR',u:'mL/ph/1.73m²',lo:90,hi:null,a:['egfr','mlcth','muc loc cau than']},
+  {n:'AST',u:'U/L',lo:0,hi:40,a:['ast','got','ast (got)','sgot']},
+  {n:'ALT',u:'U/L',lo:0,hi:40,a:['alt','gpt','alt (gpt)','sgpt']},
+  {n:'GGT',u:'U/L',lo:0,hi:50,a:['ggt','gamma gt']},
+  {n:'Bilirubin TP',u:'µmol/L',lo:0,hi:17,a:['bilirubin toan phan','bilirubin tp','bil tp','bilirubin total','bilirubin t.p']},
+  {n:'Bilirubin TT',u:'µmol/L',lo:0,hi:5,a:['bilirubin truc tiep','bilirubin tt','bil tt','bilirubin direct']},
+  {n:'Protein TP',u:'g/L',lo:64,hi:83,a:['protein toan phan','protein tp','protein mau']},
+  {n:'Albumin',u:'g/L',lo:35,hi:50,a:['albumin','albumin mau']},
+  {n:'Cholesterol',u:'mmol/L',lo:0,hi:5.2,a:['cholesterol','cholesterol toan phan','cholesterol tp']},
+  {n:'Triglycerid',u:'mmol/L',lo:0,hi:1.7,a:['triglycerid','triglyceride','triglycerides']},
+  {n:'HDL-C',u:'mmol/L',lo:0.9,hi:null,a:['hdl','hdl-c','hdl - c','hdl-cholesterol','hdl cholesterol','hdl - cholesterol']},
+  {n:'LDL-C',u:'mmol/L',lo:0,hi:3.4,a:['ldl','ldl-c','ldl - c','ldl-cholesterol','ldl cholesterol','ldl - cholesterol']},
+  {n:'Acid uric',u:'µmol/L',lo:202,hi:416,a:['acid uric','axit uric','uric acid']},
+  {n:'Na',u:'mmol/L',lo:135,hi:145,a:['na+','natri','^na']},
+  {n:'K',u:'mmol/L',lo:3.5,hi:5,a:['k+','kali','^k']},
+  {n:'Cl',u:'mmol/L',lo:98,hi:106,a:['cl-','clo','^cl']},
+  {n:'Ca TP',u:'mmol/L',lo:2.15,hi:2.55,a:['calci toan phan','canxi toan phan','ca toan phan','calci tp','calci']},
+  {n:'Ca ion',u:'mmol/L',lo:1.1,hi:1.3,a:['calci ion','canxi ion','ca++','ca ion hoa','calci ion hoa']},
+  {n:'CRP',u:'mg/L',lo:0,hi:5,a:['crp','crp hs','hs-crp','hs crp','crp-hs']},
+  {n:'PCT',u:'ng/mL',lo:0,hi:0.5,a:['procalcitonin','pct']},
+  {n:'Lactat',u:'mmol/L',lo:0.5,hi:2.2,a:['lactat','lactate','acid lactic']},
+  {n:'Troponin T hs',u:'ng/L',lo:0,hi:14,a:['troponin t','troponin t hs','hs-tnt','hs troponin t','tnt-hs']},
+  {n:'Troponin I',u:'',lo:null,hi:null,a:['troponin i','hs-tni','troponin i hs']},
+  {n:'NT-proBNP',u:'pg/mL',lo:0,hi:125,a:['nt-probnp','nt probnp','nt - probnp']},
+  {n:'INR',u:'',lo:0.8,hi:1.2,a:['inr','pt-inr']},
+  {n:'PT%',u:'%',lo:70,hi:140,a:['ty le prothrombin','pt%','pt %','prothrombin %']},
+  {n:'APTT',u:'giây',lo:null,hi:null,a:['aptt','aptt (giay)']},
+  {n:'Fibrinogen',u:'g/L',lo:2,hi:4,a:['fibrinogen']},
+  {n:'D-dimer',u:'',lo:null,hi:null,a:['d-dimer','d dimer','d - dimer']},
+  {n:'CK',u:'U/L',lo:0,hi:190,a:['ck','creatine kinase','ck toan phan']},
+  {n:'CK-MB',u:'U/L',lo:0,hi:24,a:['ck-mb','ck mb']},
+  {n:null,a:['mcv','mch','mchc','rdw','rdw-cv','rdw-sd','mpv','pdw','p-lcr','pct tieu cau','lym','lym%','lym#','mono','mono%','mono#','eos','eos%','eos#','baso','baso%','baso#','luc','ig%','nrbc',
+    'the tich trung binh hong cau','luong huyet sac to trung binh','luong hst trung binh','nong do huyet sac to trung binh','nong do hst trung binh','phan bo kich thuoc hong cau','do phan bo hong cau',
+    'the tich trung binh tieu cau','phan bo kich thuoc tieu cau','the tich khoi tieu cau','bach cau lympho','bach cau mono','bach cau ua acid','bach cau ua axit','bach cau ua base','bach cau ua bazo','hong cau luoi','hong cau nhan',
+    'bach cau nieu','hong cau nieu','glucose nieu','protein nieu','ure nieu','creatinin nieu','albumin nieu','nhom mau']}
+];
+/* ============================================================
+   TIỆN ÍCH
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const isoLocal = (d=new Date()) => new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+const today = () => isoLocal();
+const addDays = n => { const d=new Date(); d.setDate(d.getDate()+n); return isoLocal(d); };
+const fmt = d => d ? d.split('-').reverse().join('/') : '';
+const num = s => { if (s===''||s==null) return null; const v = parseFloat(String(s).replace(',','.')); return isNaN(v)?null:v; };
+const age = y => y ? (new Date().getFullYear() - Number(y)) : null;
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+function flag(v,lo,hi){ if(v==null) return ''; if(lo!=null && v<lo) return 'L'; if(hi!=null && v>hi) return 'H'; return ''; }
+const arrow = f => f==='H'?'↑':f==='L'?'↓':'';
+// Bỏ dấu tiếng Việt, GIỮ NGUYÊN độ dài chuỗi (để vị trí ký tự khớp với bản gốc)
+function strip(s){ return String(s||'').split('').map(c=>{ const b=c.normalize('NFD').replace(/[̀-ͯ]/g,''); return (b[0]||c); }).join('').replace(/[đĐ]/g,'d').toLowerCase(); }
+const normLine = s => strip(s).replace(/\s+/g,' ').trim();
+function download(name, data, type='application/octet-stream'){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(data instanceof Blob?data:new Blob([data],{type})); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+}
+const loaded={};
+function loadScript(src){ return loaded[src] ||= new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>{delete loaded[src]; rej(new Error('Không tải được thư viện. Cần kết nối Internet.'))}; document.head.appendChild(s); }); }
+
+/* Danh mục tra cứu */
+const ALIAS=[]; const TBY={};
+TESTS.forEach(t=>t.a.forEach(a=>{
+  const start=a.startsWith('^'), al=start?a.slice(1):a;
+  ALIAS.push({t, al, re:new RegExp((start?'^[\\s\\d.)\\-]*':'(?:^|[^a-z0-9])')+reEsc(al)+'(?![a-z0-9])')});
+  if(t.n) TBY[al]=t;
+}));
+TESTS.forEach(t=>{ if(t.n) TBY[t.n.toLowerCase()]=t; });
+
+/* ============================================================
+   LƯU TRỮ (IndexedDB trong trình duyệt, không mã hóa)
+   ============================================================ */
+let idb, db;
+function openIDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open('sotay_bn',1);
+  r.onupgradeneeded=()=>{ const d=r.result; d.createObjectStore('kv'); d.createObjectStore('files',{keyPath:'id'}).createIndex('pid','pid'); };
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+function tx(store, mode, fn){ return new Promise((res,rej)=>{ const t=idb.transaction(store,mode); const req=fn(t.objectStore(store));
+  t.oncomplete=()=>res(req&&req.result); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error); }); }
+const kvGet = k => tx('kv','readonly',s=>s.get(k));
+const kvSet = (k,v) => tx('kv','readwrite',s=>s.put(v,k));
+const filePut = f => tx('files','readwrite',s=>s.put(f));
+const fileGet = id => tx('files','readonly',s=>s.get(id));
+const fileDel = id => tx('files','readwrite',s=>s.delete(id));
+const filesAll = () => tx('files','readonly',s=>s.getAll());
+const newDb = () => ({v:2, patients:[], meta:{created:new Date().toISOString(), lastBackup:null}});
+async function save(){ await kvSet('db', db); scheduleSync(); }
+
+/* ============================================================
+   TRẠNG THÁI & MÀN HÌNH CHÍNH
+   ============================================================ */
+const state = {view:'home', q:'', fSetting:'all', fStatus:'active', open:null, tab:'info', labTest:null, tFilter:'open'};
+const P = id => db.patients.find(p=>p.id===id);
+function touch(p){ p.updated=new Date().toISOString(); }
+async function commit(){ await save(); render(); if(state.open) renderPanel(); }
+function go(v){ state.view=v; render(); }
+
+function render(){
+  if(!db) return;
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===state.view));
+  $('#main').innerHTML = state.view==='home' ? homeHTML() : state.view==='tasks' ? allTasksHTML() : listHTML();
+}
+function pBadges(p){ return `<span class="badge ${p.setting==='NT'?'nt':''}">${p.setting==='NT'?'Nội trú':'PK ngoài'}</span>${p.status==='closed'?'<span class="badge closed">Kết thúc</span>':''}`; }
+function pLine(p, extra=''){
+  const a=age(p.yob);
+  return `<div class="item click" onclick="openPatient('${p.id}')"><div class="grow">
+    <div><span class="pname">${esc(p.name)}</span> <span class="mut">${a!=null?a+' tuổi':''}${p.sex?' · '+esc(p.sex):''}${p.code?' · '+esc(p.code):''}</span></div>
+    <div class="mut">${pBadges(p)}${p.ward?esc(p.ward)+' · ':''}${esc((p.dx||'').split('\n')[0])}</div>${extra}</div></div>`;
+}
+function homeHTML(){
+  const act=db.patients.filter(p=>p.status!=='closed'), t=today(), soon=addDays(7);
+  const due=act.filter(p=>p.followUp && p.followUp<=soon).sort((a,b)=>a.followUp.localeCompare(b.followUp));
+  const tasks=[]; act.forEach(p=>(p.tasks||[]).forEach(k=>{ if(!k.done) tasks.push({p,k}); }));
+  tasks.sort((a,b)=>(a.k.due||'9999').localeCompare(b.k.due||'9999'));
+  const ab=[], since=addDays(-7);
+  act.forEach(p=>{ const last={}; (p.labs||[]).forEach(l=>{ if(!last[l.test]||l.date>=last[l.test].date) last[l.test]=l; });
+    Object.values(last).forEach(l=>{ const f=flag(l.value,l.lo,l.hi); if(f && l.date>=since) ab.push({p,l,f}); }); });
+  ab.sort((a,b)=>b.l.date.localeCompare(a.l.date));
+  return `
+  <div style="margin-bottom:12px"><button class="upl" onclick="pickFiles(null)">📥 Nhập từ ảnh / PDF (phiếu thông tin, xét nghiệm, CĐHA) — tự nhận bệnh nhân</button></div>
+  <div class="grid" style="margin-bottom:12px">
+    <div class="stat"><b>${act.length}</b><span>Đang theo dõi</span></div>
+    <div class="stat"><b>${act.filter(p=>p.setting==='NT').length}</b><span>Nội trú</span></div>
+    <div class="stat"><b>${act.filter(p=>p.setting!=='NT').length}</b><span>Phòng khám ngoài</span></div>
+    <div class="stat"><b>${tasks.length}</b><span>Việc chưa xong</span></div>
+  </div>
+  <div class="card"><h2>📅 Tái khám (quá hạn & 7 ngày tới)</h2>
+    ${due.length?due.map(p=>pLine(p,`<div>${p.followUp<t?'<span class="badge bad">Quá hạn</span>':p.followUp===t?'<span class="badge warn">Hôm nay</span>':''}<span class="mut">Hẹn ${fmt(p.followUp)}</span></div>`)).join(''):'<div class="empty">Không có lịch tái khám gần.</div>'}
+  </div>
+  <div class="card"><h2>✅ Việc cần làm</h2>
+    ${tasks.length?tasks.slice(0,30).map(({p,k})=>`<div class="item">
+      <input type="checkbox" style="width:auto;margin-top:4px" onchange="toggleTask('${p.id}','${k.id}')">
+      <div class="grow click" onclick="openPatient('${p.id}','tasks')"><div>${esc(k.text)}</div>
+      <div class="mut">${esc(p.name)}${k.due?` · ${k.due<t?'<span class="badge bad">Quá hạn</span>':''}hạn ${fmt(k.due)}`:''}</div></div></div>`).join(''):'<div class="empty">Không có việc tồn đọng.</div>'}
+  </div>
+  <div class="card"><h2>⚠️ Kết quả mới nhất còn bất thường (7 ngày qua)</h2>
+    ${ab.length?`<table><tr><th>Bệnh nhân</th><th>Ngày</th><th>XN</th><th>Kết quả</th></tr>
+      ${ab.slice(0,40).map(({p,l,f})=>`<tr class="click" onclick="openPatient('${p.id}','labs')"><td>${esc(p.name)}</td><td>${fmt(l.date)}</td><td>${esc(l.test)}</td><td class="${f}">${l.value} ${esc(l.unit||'')} ${arrow(f)}</td></tr>`).join('')}</table>`:'<div class="empty">Không có.</div>'}
+  </div>`;
+}
+function listHTML(){
+  const chip=(k,v,l)=>`<button class="${state[k]===v?'on':''}" onclick="state.${k}='${v}';render()">${l}</button>`;
+  return `<div style="margin-bottom:12px"><button class="upl" onclick="pickFiles(null)">📥 Nhập từ ảnh / PDF — tự nhận bệnh nhân</button></div><div class="card">
+    <input id="q" placeholder="Tìm tên, mã BN, chẩn đoán, khoa…" value="${esc(state.q)}" oninput="state.q=this.value;$('#results').innerHTML=resultsHTML()">
+    <div class="chips">${chip('fSetting','all','Tất cả')}${chip('fSetting','PK','Phòng khám ngoài')}${chip('fSetting','NT','Nội trú')}
+      <span style="width:10px"></span>${chip('fStatus','active','Đang theo dõi')}${chip('fStatus','closed','Đã kết thúc')}${chip('fStatus','all','Mọi trạng thái')}</div>
+    <div id="results">${resultsHTML()}</div></div>`;
+}
+function resultsHTML(){
+  const qq=normLine(state.q);
+  const list=db.patients.filter(p=>(state.fSetting==='all'||p.setting===state.fSetting)&&(state.fStatus==='all'||(p.status||'active')===state.fStatus)&&(!qq||normLine([p.name,p.code,p.dx,p.ward,p.phone,p.address].join(' ')).includes(qq)))
+    .sort((a,b)=>(b.updated||'').localeCompare(a.updated||''));
+  return list.length?list.map(p=>pLine(p)).join(''):'<div class="empty">Không có bệnh nhân phù hợp.</div>';
+}
+
+/* ============================================================
+   MODAL & FORM
+   ============================================================ */
+function openModal(html){ $('#modal').innerHTML=`<div class="box">${html}</div>`; $('#modal').hidden=false; }
+function closeModal(){ $('#modal').hidden=true; $('#modal').innerHTML=''; }
+$('#modal').addEventListener('click', e=>{ if(e.target.id==='modal' && !busy) closeModal(); });
+let formCb=null, busy=false;
+function field(f,val){
+  const id='f_'+f.k, v=val??f.def??'';
+  let inp;
+  if(f.type==='select') inp=`<select id="${id}">${Object.entries(f.opts).map(([k,l])=>`<option value="${esc(k)}" ${k==v?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
+  else if(f.type==='textarea') inp=`<textarea id="${id}" placeholder="${esc(f.ph||'')}">${esc(v)}</textarea>`;
+  else inp=`<input id="${id}" type="${f.type||'text'}" value="${esc(v)}" placeholder="${esc(f.ph||'')}">`;
+  return `<div><label for="${id}">${esc(f.label)}${f.req?' *':''}</label>${inp}</div>`;
+}
+function formModal(title, fields, vals, cb){
+  formCb={fields,cb}; const rows=[]; let i=0;
+  while(i<fields.length){ const f=fields[i];
+    if(f.half&&fields[i+1]&&fields[i+1].half){ rows.push(`<div class="two">${field(f,vals[f.k])}${field(fields[i+1],vals[fields[i+1].k])}</div>`); i+=2; }
+    else { rows.push(field(f,vals[f.k])); i++; } }
+  openModal(`<h3>${esc(title)}</h3>${rows.join('')}<div class="err" id="ferr"></div>
+    <div class="actions"><button onclick="closeModal()">Hủy</button><button class="pri" onclick="submitForm()">Lưu</button></div>`);
+}
+async function submitForm(){
+  const {fields,cb}=formCb, o={};
+  for(const f of fields){ o[f.k]=$('#f_'+f.k).value.trim(); if(f.req&&!o[f.k]) return $('#ferr').textContent=`Vui lòng nhập "${f.label}".`; }
+  closeModal(); await cb(o);
+}
+
+/* ============================================================
+   BỆNH NHÂN
+   ============================================================ */
+const PF=[
+  {k:'name',label:'Họ tên',req:true},
+  {k:'code',label:'Mã BN / Mã HSBA',half:true},{k:'yob',label:'Năm sinh',type:'number',half:true},
+  {k:'sex',label:'Giới',type:'select',opts:{'':'—','Nam':'Nam','Nữ':'Nữ'},half:true},{k:'phone',label:'Điện thoại',type:'tel',half:true},
+  {k:'setting',label:'Nơi điều trị',type:'select',opts:SETTING,half:true},{k:'ward',label:'Khoa / giường / phòng khám',half:true},
+  {k:'address',label:'Địa chỉ liên lạc'},
+  {k:'dx',label:'Chẩn đoán',type:'textarea'},
+  {k:'admitDate',label:'Ngày vào viện / khám đầu',type:'date',half:true},{k:'followUp',label:'Hẹn tái khám',type:'date',half:true},
+  {k:'status',label:'Trạng thái',type:'select',opts:STATUS},
+  {k:'history',label:'Tiền sử, dị ứng, ghi chú chung',type:'textarea'}
+];
+function addPatient(){
+  formModal('Thêm bệnh nhân',PF,{setting:'PK',status:'active',admitDate:today()},async o=>{
+    const p={id:uid(),...o,visits:[],labs:[],imaging:[],tasks:[],files:[],created:new Date().toISOString()}; touch(p);
+    db.patients.push(p); await commit(); openPatient(p.id);
+  });
+}
+function editPatient(id){ const p=P(id); formModal('Sửa thông tin',PF,p,async o=>{ Object.assign(p,o); touch(p); await commit(); }); }
+async function deletePatient(id){
+  const p=P(id); if(!confirm(`Xóa vĩnh viễn bệnh nhân "${p.name}" và toàn bộ dữ liệu, tệp đính kèm?`)) return;
+  for(const f of (p.files||[])) await fileDel(f.id);
+  db.patients=db.patients.filter(x=>x.id!==id); closePanel(); await commit();
+}
+async function toggleStatus(id){ const p=P(id); p.status=p.status==='closed'?'active':'closed'; touch(p); await commit(); }
+
+/* ---------- Hồ sơ chi tiết ---------- */
+function openPatient(id,tab='info'){ state.open=id; state.tab=tab; state.labTest=null; renderPanel(); $('#panel').hidden=false; $('#panel').scrollTop=0; }
+function closePanel(){ state.open=null; $('#panel').hidden=true; render(); }
+function setTab(t){ state.tab=t; renderPanel(); }
+function renderPanel(){
+  const p=P(state.open); if(!p) return closePanel();
+  const a=age(p.yob);
+  const T=[['info','Thông tin'],['visits',`Diễn biến (${(p.visits||[]).length})`],['labs',`Xét nghiệm (${(p.labs||[]).length})`],['imaging',`CĐHA (${(p.imaging||[]).length})`],['meds',`Thuốc (${(p.meds||[]).filter(m=>m.status!=='stopped').length})`],
+           ['files',`Tệp (${(p.files||[]).length})`],['tasks',`Việc cần làm (${(p.tasks||[]).filter(k=>!k.done).length})`]];
+  const B={info:infoHTML,visits:visitsHTML,labs:labsHTML,imaging:imagingHTML,meds:medsHTML,files:filesHTML,tasks:tasksHTML}[state.tab](p);
+  $('#panel').innerHTML=`<div class="phead"><div class="in">
+      <button class="ghost" style="padding-left:0" onclick="closePanel()">← Quay lại</button>
+      <div style="font-size:18px;font-weight:700">${esc(p.name)}</div>
+      <div class="mut">${pBadges(p)}${a!=null?a+' tuổi':''}${p.sex?' · '+esc(p.sex):''}${p.code?' · '+esc(p.code):''}</div>
+      <div class="tabs">${T.map(([k,l])=>`<button class="${state.tab===k?'on':''}" onclick="setTab('${k}')">${l}</button>`).join('')}</div>
+    </div></div><main>${B}</main>`;
+}
+const uploadBtn = id => `<button class="upl" onclick="pickFiles('${id}')">📎 Thêm tài liệu từ ảnh / PDF — tự động đọc</button>`;
+function infoHTML(p){
+  const rows=[['Mã BN / HSBA',p.code],['Năm sinh',p.yob?`${p.yob} (${age(p.yob)} tuổi)`:''],['Giới',p.sex],['Điện thoại',p.phone],['Địa chỉ',p.address],['Nơi điều trị',SETTING[p.setting]],
+    ['Khoa / giường',p.ward],['Chẩn đoán',p.dx],['Ngày vào / khám đầu',fmt(p.admitDate)],['Hẹn tái khám',fmt(p.followUp)],['Trạng thái',STATUS[p.status||'active']],['Tiền sử, ghi chú',p.history]];
+  return `<div style="margin-bottom:12px">${uploadBtn(p.id)}</div>
+  <div class="card"><dl>${rows.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v||'—')}</dd>`).join('')}</dl></div>
+  <div class="row"><button class="pri" onclick="editPatient('${p.id}')">Sửa thông tin</button>
+    <button onclick="toggleStatus('${p.id}')">${p.status==='closed'?'Mở lại theo dõi':'Kết thúc / ra viện'}</button>
+    <div style="flex:1"></div><button class="danger" onclick="deletePatient('${p.id}')">Xóa bệnh nhân</button></div>`;
+}
+
+/* ---------- Diễn biến ---------- */
+const VF=[{k:'date',label:'Ngày',type:'date',req:true,half:true},{k:'kind',label:'Loại',type:'select',opts:{'Khám':'Khám','Diễn biến':'Diễn biến','Thủ thuật':'Thủ thuật','Ghi chú':'Ghi chú'},half:true},
+  {k:'text',label:'Nội dung (triệu chứng, khám, xử trí, thuốc…)',type:'textarea',req:true}];
+function visitsHTML(p){
+  const v=[...(p.visits||[])].sort((a,b)=>b.date.localeCompare(a.date)||(b.ts||'').localeCompare(a.ts||''));
+  return `<div class="row" style="margin-bottom:10px"><button class="pri" onclick="addVisit('${p.id}')">＋ Thêm diễn biến</button></div>
+  <div class="card">${v.length?v.map(x=>`<div class="item"><div class="grow">
+    <div><b>${fmt(x.date)}</b> <span class="badge">${esc(x.kind||'')}</span></div><div style="white-space:pre-wrap">${esc(x.text)}</div></div>
+    <div><button class="sm" onclick="editVisit('${p.id}','${x.id}')">Sửa</button> <button class="sm danger" onclick="delItem('${p.id}','visits','${x.id}')">Xóa</button></div></div>`).join(''):'<div class="empty">Chưa có diễn biến.</div>'}</div>`;
+}
+function addVisit(id){ formModal('Thêm diễn biến',VF,{date:today(),kind:'Khám'},async o=>{ const p=P(id); (p.visits||=[]).push({id:uid(),ts:new Date().toISOString(),...o}); touch(p); await commit(); }); }
+function editVisit(id,vid){ const p=P(id), x=p.visits.find(v=>v.id===vid); formModal('Sửa diễn biến',VF,x,async o=>{ Object.assign(x,o); touch(p); await commit(); }); }
+async function delItem(id,list,iid){ if(!confirm('Xóa mục này?')) return; const p=P(id); p[list]=p[list].filter(x=>x.id!==iid); touch(p); await commit(); }
+
+/* ---------- Xét nghiệm ---------- */
+function parseLabLine(line){ // nhập tay: "Tên giá_trị [đơn vị] [(min-max)]"
+  const m=line.trim().match(/^(.+?)[\s:=]+(-?\d+(?:[.,]\d+)?)\s*([^\s(]*)\s*(?:\(\s*(-?\d+(?:[.,]\d+)?)\s*[-–]\s*(-?\d+(?:[.,]\d+)?)\s*\))?\s*$/);
+  if(!m) return null;
+  const name=m[1].trim(), t=TBY[normLine(name)];
+  return {test:t?t.n:name, value:num(m[2]), unit:m[3]||(t?t.u:''), lo:m[4]!=null?num(m[4]):(t?t.lo:null), hi:m[5]!=null?num(m[5]):(t?t.hi:null)};
+}
+function addLabs(id){
+  openModal(`<h3>Nhập tay kết quả xét nghiệm</h3>
+    <label>Ngày xét nghiệm</label><input id="ld" type="date" value="${today()}">
+    <label>Mỗi dòng một chỉ số: <i>Tên giá_trị [đơn vị] [(min-max)]</i></label>
+    <textarea id="lt" style="min-height:160px" placeholder="WBC 12.5&#10;HGB 108&#10;CRP 45&#10;Troponin 0.08 ng/mL (0-0.04)" oninput="previewLabs()"></textarea>
+    <div id="lp" class="mut"></div><div class="err" id="lerr2"></div>
+    <div class="actions"><button onclick="closeModal()">Hủy</button><button class="pri" onclick="saveLabs('${id}')">Lưu</button></div>`);
+}
+function previewLabs(){
+  const lines=$('#lt').value.split('\n').filter(s=>s.trim());
+  $('#lp').innerHTML=lines.length?`<table>${lines.map(l=>{ const r=parseLabLine(l); if(!r) return `<tr><td colspan="3" class="H">Không đọc được: ${esc(l)}</td></tr>`;
+    const f=flag(r.value,r.lo,r.hi); return `<tr><td>${esc(r.test)}</td><td class="${f}">${r.value} ${esc(r.unit)} ${arrow(f)}</td><td class="mut">${r.lo!=null||r.hi!=null?`${r.lo??''}–${r.hi??''}`:''}</td></tr>`; }).join('')}</table>`:'';
+}
+async function saveLabs(id){
+  const d=$('#ld').value, rs=$('#lt').value.split('\n').filter(s=>s.trim()).map(parseLabLine);
+  if(!d) return $('#lerr2').textContent='Chọn ngày.';
+  if(!rs.length) return $('#lerr2').textContent='Chưa nhập chỉ số.';
+  if(rs.some(r=>!r)) return $('#lerr2').textContent='Có dòng không đọc được — sửa hoặc xóa dòng đó.';
+  const p=P(id); (p.labs||=[]); rs.forEach(r=>p.labs.push({id:uid(),date:d,...r})); touch(p); closeModal(); await commit();
+}
+function labsHTML(p){
+  const labs=p.labs||[], tests=[...new Set(labs.map(l=>l.test))];
+  if(state.labTest&&!tests.includes(state.labTest)) state.labTest=null;
+  if(!state.labTest&&tests.length) state.labTest=tests[0];
+  const latest=tests.map(t=>{ const arr=labs.filter(l=>l.test===t).sort((a,b)=>a.date.localeCompare(b.date)); return {t,arr,last:arr[arr.length-1]}; });
+  let chart='';
+  if(state.labTest){
+    const arr=latest.find(x=>x.t===state.labTest).arr, last=arr[arr.length-1];
+    chart=`<div class="card"><h2>${esc(state.labTest)} <span class="mut">${esc(last.unit||'')}${last.lo!=null||last.hi!=null?` · tham chiếu ${last.lo??''}–${last.hi??''}`:''}</span></h2>
+      ${chartSVG(arr,last.lo,last.hi)}
+      <table style="margin-top:8px"><tr><th>Ngày</th><th>Kết quả</th><th></th></tr>
+      ${[...arr].reverse().map(l=>{const f=flag(l.value,l.lo,l.hi);return `<tr><td>${fmt(l.date)} ${l.fileId?`<a href="#" onclick="viewFile('${l.fileId}');return false" title="Xem phiếu gốc">📎</a>`:''}</td><td class="${f}">${l.value} ${esc(l.unit||'')} ${arrow(f)}</td><td style="text-align:right"><button class="sm danger" onclick="delItem('${p.id}','labs','${l.id}')">Xóa</button></td></tr>`}).join('')}</table></div>`;
+  }
+  return `<div style="margin-bottom:10px">${uploadBtn(p.id)}</div>
+  <div class="row" style="margin-bottom:10px"><button onclick="addLabs('${p.id}')">⌨︎ Nhập tay</button></div>
+  ${tests.length?`<div class="card"><h2>Kết quả gần nhất</h2><table><tr><th>Chỉ số</th><th>Ngày</th><th>Kết quả</th><th>Lần</th></tr>
+    ${latest.map(({t,arr,last})=>{const f=flag(last.value,last.lo,last.hi);return `<tr class="click" style="${t===state.labTest?'background:var(--pri2)':''}" onclick='state.labTest=${esc(JSON.stringify(t))};renderPanel()'><td>${esc(t)}</td><td>${fmt(last.date)}</td><td class="${f}">${last.value} ${esc(last.unit||'')} ${arrow(f)}</td><td>${arr.length}</td></tr>`}).join('')}
+  </table><div class="mut" style="margin-top:6px">Bấm vào một chỉ số để xem biểu đồ.</div></div>${chart}`:'<div class="card"><div class="empty">Chưa có kết quả xét nghiệm.</div></div>'}`;
+}
+function chartSVG(pts,lo,hi){
+  const W=420,H=210,pl=52,pr=16,pt=18,pb=28;
+  const vals=pts.map(p=>p.value).concat([lo,hi].filter(v=>v!=null));
+  let mn=Math.min(...vals),mx=Math.max(...vals); if(mn===mx){mn-=1;mx+=1;} const nonNeg=mn>=0; const pad=(mx-mn)*.12; mn-=pad; mx+=pad; if(nonNeg) mn=Math.max(0,mn);
+  const ts=pts.map(p=>new Date(p.date).getTime()); let t0=Math.min(...ts),t1=Math.max(...ts); if(t0===t1){t0-=864e5;t1+=864e5;}
+  const X=t=>pl+(t-t0)/(t1-t0)*(W-pl-pr), Y=v=>pt+(mx-v)/(mx-mn)*(H-pt-pb);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:640px">`;
+  if(lo!=null&&hi!=null) s+=`<rect x="${pl}" y="${Y(hi)}" width="${W-pl-pr}" height="${Math.max(0,Y(lo)-Y(hi))}" fill="#e7f4ea"/>`;
+  else [lo,hi].forEach(v=>{ if(v!=null) s+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="#86c59a" stroke-dasharray="4 3"/>`; });
+  for(let i=0;i<=4;i++){ const v=mn+(mx-mn)*i/4,y=Y(v); s+=`<line x1="${pl}" x2="${W-pr}" y1="${y}" y2="${y}" stroke="#eef0f3"/><text x="${pl-5}" y="${y+4}" text-anchor="end">${+v.toFixed(Math.abs(mx-mn)<5?2:1)}</text>`; }
+  s+=`<polyline fill="none" stroke="#0e6b74" stroke-width="2" points="${pts.map((p,i)=>`${X(ts[i])},${Y(p.value)}`).join(' ')}"/>`;
+  pts.forEach((p,i)=>{ const f=flag(p.value,p.lo,p.hi), c=f==='H'?'#b42318':f==='L'?'#1d4ed8':'#0e6b74';
+    s+=`<circle cx="${X(ts[i])}" cy="${Y(p.value)}" r="4.5" fill="${c}"/>`;
+    if(pts.length<=10) s+=`<text x="${X(ts[i])}" y="${Y(p.value)-9}" text-anchor="middle" style="fill:${c};font-weight:600">${p.value}</text>`; });
+  const uniq=[...new Set(pts.map(p=>p.date))], step=Math.ceil(uniq.length/6);
+  uniq.forEach((d,i)=>{ if(i%step&&i!==uniq.length-1) return; s+=`<text x="${X(new Date(d).getTime())}" y="${H-10}" text-anchor="middle">${d.slice(8,10)}/${d.slice(5,7)}</text>`; });
+  return s+'</svg>';
+}
+
+/* ---------- Chẩn đoán hình ảnh ---------- */
+const IF=[{k:'date',label:'Ngày',type:'date',req:true,half:true},{k:'modality',label:'Loại',type:'select',opts:Object.fromEntries(MODALITY.map(m=>[m,m])),half:true},
+  {k:'region',label:'Vùng / bộ phận',half:true},{k:'acc',label:'Mã chụp (tra lại trên PACS)',half:true},{k:'result',label:'Kết luận',type:'textarea',req:true},{k:'link',label:'Đường dẫn xem ảnh (tùy chọn, dán hoặc đọc từ QR)',ph:'https://…'}];
+const safeUrl = u => (/^https?:\/\//i.test(String(u||'').trim()) ? String(u).trim() : '');
+function imagingHTML(p){
+  const v=[...(p.imaging||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  return `<div style="margin-bottom:10px">${uploadBtn(p.id)}</div>
+  <div class="row" style="margin-bottom:10px"><button onclick="addImg('${p.id}')">⌨︎ Nhập tay</button><button onclick="qrImg('${p.id}')">📷 Đọc QR từ ảnh</button></div>
+  <div class="note" style="margin:0 0 10px">Chỉ lưu đường dẫn để mở lại, <b>không lưu ảnh chụp</b>. Đường dẫn có thể cho phép xem ảnh, nên đừng chia sẻ cho người khác.</div>
+  <div class="card">${v.length?v.map(x=>{ const u=safeUrl(x.link); return `<div class="item"><div class="grow">
+    <div><b>${fmt(x.date)}</b> <span class="badge">${esc(x.modality)}</span>${esc(x.region||'')} ${x.acc?`<span class="mut">· Mã: ${esc(x.acc)}</span>`:''}
+      ${x.fileId?`<a href="#" onclick="viewFile('${x.fileId}');return false" title="Xem phiếu gốc">📎</a>`:''}</div>
+    <div style="white-space:pre-wrap">${esc(x.result)}</div>
+    ${u?`<div style="margin-top:4px"><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">🔗 Mở đường dẫn xem ảnh</a></div>`:''}</div>
+    <div><button class="sm" onclick="editImg('${p.id}','${x.id}')">Sửa</button> <button class="sm danger" onclick="delItem('${p.id}','imaging','${x.id}')">Xóa</button></div></div>`;}).join(''):'<div class="empty">Chưa có kết quả CĐHA.</div>'}</div>`;
+}
+function qrImg(pid){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=async()=>{ const f=inp.files[0]; if(!f) return;
+    let link='';
+    try{
+      if(!('BarcodeDetector' in window)) throw 0;
+      const bmp=await createImageBitmap(f); const found=await new BarcodeDetector({formats:['qr_code']}).detect(bmp);
+      link=(found[0]&&found[0].rawValue)||'';
+    }catch(e){ link=''; }
+    if(!link) alert('Không đọc được QR từ ảnh này (trình duyệt có thể không hỗ trợ). Hãy dán đường dẫn vào ô "Đường dẫn xem ảnh".');
+    formModal('Thêm CĐHA từ QR',IF,{date:today(),modality:'Siêu âm',link},async o=>{ const p=P(pid); (p.imaging||=[]).push({id:uid(),...o}); touch(p); await commit(); });
+  };
+  inp.click();
+}
+function addImg(id){ formModal('Thêm kết quả CĐHA',IF,{date:today(),modality:'Siêu âm'},async o=>{ const p=P(id); (p.imaging||=[]).push({id:uid(),...o}); touch(p); await commit(); }); }
+function editImg(id,iid){ const p=P(id), x=p.imaging.find(v=>v.id===iid); formModal('Sửa kết quả CĐHA',IF,x,async o=>{ Object.assign(x,o); touch(p); await commit(); }); }
+
+/* ---------- Thuốc & đơn thuốc ---------- */
+const MF=[{k:'name',label:'Tên thuốc (biệt dược), hàm lượng',req:true,ph:'VD: Amlodipin 5 mg'},
+  {k:'ingredient',label:'Hoạt chất (tên gốc)',half:true,ph:'VD: amlodipine'},
+  {k:'dose',label:'Liều dùng',half:true,ph:'VD: 1 viên'},{k:'freq',label:'Cách dùng',half:true,ph:'VD: sáng, 2 lần/ngày'},
+  {k:'start',label:'Ngày bắt đầu',type:'date',half:true},{k:'note',label:'Ghi chú',half:true}];
+function medsHTML(p){
+  const meds=p.meds||[], act=meds.filter(m=>m.status!=='stopped'), old=meds.filter(m=>m.status==='stopped');
+  const rx=[...(p.rx||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const line=m=>`<div class="item"><div class="grow"><div><b>${esc(m.name)}</b></div>
+      <div class="mut">${[m.dose,m.freq].filter(Boolean).map(esc).join(' · ')}${m.start?` · từ ${fmt(m.start)}`:''}${m.stop?` · ngừng ${fmt(m.stop)}`:''}${m.note?` · ${esc(m.note)}`:''}</div></div>
+      <div class="row" style="gap:4px">${m.status==='stopped'?'':`<button class="sm" onclick="stopMed('${p.id}','${m.id}')">Ngừng</button>`}
+      <button class="sm" onclick="editMed('${p.id}','${m.id}')">Sửa</button><button class="sm danger" onclick="delItem('${p.id}','meds','${m.id}')">Xóa</button></div></div>`;
+  return `<div class="row" style="margin-bottom:10px"><button class="pri" onclick="addMed('${p.id}')">＋ Thêm thuốc đang dùng</button><button onclick="addRx('${p.id}')">📝 Kê đơn</button></div>
+  <div class="card"><h2>Thuốc đang dùng</h2>${act.length?act.map(line).join(''):'<div class="empty">Chưa có thuốc đang dùng.</div>'}</div>
+  ${old.length?`<div class="card"><h2>Đã ngừng</h2>${old.map(line).join('')}</div>`:''}
+  <div class="card"><h2>Đơn thuốc đã kê</h2>${rx.length?rx.map(r=>`<div class="item"><div class="grow">
+      <div><b>${fmt(r.date)}</b>${r.doctor?` · ${esc(r.doctor)}`:''}</div>
+      <div style="white-space:pre-wrap" class="mut">${esc(r.items.map(i=>`• ${i.name} – ${i.dose||''} – ${i.freq||''}${i.days?` – ${i.days} ngày`:''}`).join('\n'))}</div>
+      ${r.note?`<div class="mut">Ghi chú: ${esc(r.note)}</div>`:''}</div>
+      <div class="row" style="gap:4px"><button class="sm danger" onclick="delItem('${p.id}','rx','${r.id}')">Xóa</button></div></div>`).join(''):'<div class="empty">Chưa có đơn thuốc.</div>'}</div>
+  <div class="note">Đơn thuốc chỉ lưu trong app. Việc in hay gửi đơn tuân theo quy định của bệnh viện.</div>`;
+}
+function addMed(id){ formModal('Thêm thuốc đang dùng',MF,{start:today()},async o=>{ const p=P(id); (p.meds||=[]).push({id:uid(),status:'active',...o}); touch(p); await commit(); }); }
+function editMed(id,mid){ const p=P(id), m=p.meds.find(x=>x.id===mid); formModal('Sửa thuốc',MF,m,async o=>{ Object.assign(m,o); touch(p); await commit(); }); }
+async function stopMed(id,mid){ const p=P(id), m=p.meds.find(x=>x.id===mid); if(!confirm(`Ngừng thuốc "${m.name}"?`)) return; m.status='stopped'; m.stop=today(); touch(p); await commit(); }
+const RXF=[{k:'date',label:'Ngày kê đơn',type:'date',req:true,half:true},{k:'doctor',label:'Bác sĩ kê đơn',half:true},
+  {k:'lines',label:'Thuốc, mỗi dòng: tên | liều | cách dùng | số ngày | hoạt chất',type:'textarea',req:true,ph:'Amlodipin 5 mg | 1 viên | sáng | 30 | amlodipine\nAtorvastatin 20 mg | 1 viên | tối | 30 | atorvastatin'},
+  {k:'note',label:'Lời dặn',type:'textarea'}];
+function addRx(id){ formModal('Kê đơn thuốc',RXF,{date:today()},async o=>{
+    const items=o.lines.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{ const [name,dose,freq,days,ingredient]=l.split('|').map(x=>(x||'').trim()); return {name,dose,freq,days,ingredient}; }).filter(i=>i.name);
+    if(!items.length){ alert('Chưa có thuốc nào.'); return false; }
+    const p=P(id); (p.rx||=[]).push({id:uid(),date:o.date,doctor:o.doctor,note:o.note,items}); touch(p); await commit(); }); }
+/* ---------- Việc cần làm ---------- */
+const TF=[{k:'text',label:'Việc cần làm',req:true,ph:'VD: Xét nghiệm lại điện giải, hội chẩn ngoại…'},{k:'due',label:'Hạn',type:'date'}];
+function tasksHTML(p){
+  const v=[...(p.tasks||[])].sort((a,b)=>(a.done-b.done)||(a.due||'9999').localeCompare(b.due||'9999')), t=today();
+  return `<div class="row" style="margin-bottom:10px"><button class="pri" onclick="addTask('${p.id}')">＋ Thêm việc</button></div>
+  <div class="card">${v.length?v.map(k=>`<div class="item">
+    <input type="checkbox" style="width:auto;margin-top:4px" ${k.done?'checked':''} onchange="toggleTask('${p.id}','${k.id}')">
+    <div class="grow" style="${k.done?'text-decoration:line-through;color:#999':''}"><div>${esc(k.text)}</div>
+      ${k.due?`<div class="mut">${!k.done&&k.due<t?'<span class="badge bad">Quá hạn</span>':''}Hạn ${fmt(k.due)}</div>`:''}</div>
+    <button class="sm danger" onclick="delItem('${p.id}','tasks','${k.id}')">Xóa</button></div>`).join(''):'<div class="empty">Chưa có việc nào.</div>'}</div>`;
+}
+function addTask(id){ formModal('Thêm việc cần làm',TF,{},async o=>{ const p=P(id); (p.tasks||=[]).push({id:uid(),done:false,...o}); touch(p); await commit(); }); }
+async function toggleTask(id,kid){ const p=P(id), k=p.tasks.find(x=>x.id===kid); k.done=!k.done; k.doneAt=k.done?new Date().toISOString():null; touch(p); await commit(); }
+/* --- Danh sách việc cần làm của tất cả bệnh nhân --- */
+function allTasksHTML(){
+  const f=state.tFilter, t=today();
+  const all=[]; db.patients.forEach(p=>(p.tasks||[]).forEach(k=>all.push({p,k})));
+  const cnt={open:all.filter(x=>!x.k.done).length, done:all.filter(x=>x.k.done).length};
+  let list=all.filter(x=>f==='all'||(f==='open'?!x.k.done:x.k.done));
+  list.sort((a,b)=>{
+    if(a.k.done!==b.k.done) return a.k.done?1:-1;
+    if(a.k.done) return (b.k.doneAt||'').localeCompare(a.k.doneAt||'');
+    return (a.k.due||'9999').localeCompare(b.k.due||'9999');
+  });
+  const chip=(v,l)=>`<button class="${f===v?'on':''}" onclick="state.tFilter='${v}';render()">${l}</button>`;
+  return `<div class="card">
+    <div class="chips" style="margin-top:0">${chip('open',`Chưa làm (${cnt.open})`)}${chip('done',`Đã làm (${cnt.done})`)}${chip('all','Tất cả')}</div>
+    ${list.length?list.map(({p,k})=>{ const over=!k.done&&k.due&&k.due<t, isToday=!k.done&&k.due===t;
+      return `<div class="item">
+        <input type="checkbox" style="width:auto;margin-top:4px" ${k.done?'checked':''} onchange="toggleTask('${p.id}','${k.id}')">
+        <div class="grow"><div style="${k.done?'text-decoration:line-through;color:#999':''}">${esc(k.text)}</div>
+          <div class="mut"><a href="#" onclick="openPatient('${p.id}','tasks');return false">${esc(p.name)}</a>${p.status==='closed'?' <span class="badge closed">Kết thúc</span>':''}
+            ${k.due?` · hạn ${fmt(k.due)}`:''}
+            ${over?' <span class="badge bad">Quá hạn</span>':''}${isToday?' <span class="badge warn">Hôm nay</span>':''}
+            ${k.done&&k.doneAt?` · đã làm ${new Date(k.doneAt).toLocaleDateString('vi-VN')}`:''}</div></div></div>`; }).join('')
+      :`<div class="empty">${f==='open'?'Không còn việc nào chưa làm.':f==='done'?'Chưa có việc nào đã làm.':'Chưa có việc nào.'}</div>`}
+  </div>`;
+}
+
+/* ---------- Tệp đính kèm ---------- */
+const KIND={lab:'Xét nghiệm',img:'CĐHA',info:'Thông tin BN',other:'Khác'};
+function filesHTML(p){
+  const v=[...(p.files||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  return `<div style="margin-bottom:10px">${uploadBtn(p.id)}</div>
+  <div class="card">${v.length?v.map(f=>`<div class="item"><div class="grow">
+    <div>${f.type==='application/pdf'?'📄':'🖼'} ${esc(f.name)}</div>
+    <div class="mut">${fmt(f.date)} · <span class="badge">${KIND[f.kind]||'Khác'}</span>${Math.round((f.size||0)/1024)} KB</div></div>
+    <div class="row" style="gap:4px"><button class="sm" onclick="viewFile('${f.id}')">Xem</button><button class="sm" onclick="rereadFile('${p.id}','${f.id}')">Đọc lại</button><button class="sm danger" onclick="deleteFile('${p.id}','${f.id}')">Xóa</button></div></div>`).join(''):'<div class="empty">Chưa có tệp nào.</div>'}</div>`;
+}
+async function viewFile(fid){
+  const f=await fileGet(fid); if(!f) return alert('Không tìm thấy tệp.');
+  const url=URL.createObjectURL(f.blob);
+  if(f.type.startsWith('image/')) openModal(`<h3>${esc(f.name)}</h3><img src="${url}" style="width:100%;border-radius:8px">
+    ${f.text?`<details style="margin-top:8px"><summary class="mut">Văn bản đọc được</summary><pre style="white-space:pre-wrap;font-size:12px">${esc(f.text)}</pre></details>`:''}
+    <div class="actions"><button onclick="closeModal()">Đóng</button></div>`);
+  else { const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+}
+async function deleteFile(pid,fid){
+  if(!confirm('Xóa tệp này? (Kết quả đã lưu vào hồ sơ vẫn giữ lại)')) return;
+  const p=P(pid); await fileDel(fid); p.files=p.files.filter(f=>f.id!==fid); touch(p); await commit();
+}
+async function rereadFile(pid,fid){
+  const f=await fileGet(fid); if(!f) return;
+  showProgress('Đang phân tích lại…');
+  try{
+    let text=f.text;
+    if(!text){ const r=await extractFromFile(new File([f.blob],f.name,{type:f.type})); text=r.text; f.text=text; await filePut(f); }
+    startReview(analyze(text), {files:[], existingFileId:fid, source:'tệp đã lưu', preview:f.type.startsWith('image/')?f.blob:null, ctxPid:pid});
+  }catch(e){ showError(e); }
+}
+
+/* ============================================================
+   ĐỌC ẢNH / PDF
+   ============================================================ */
+let pending=null, ocrWorkerP=null, ocrProg=()=>{};
+function showProgress(msg){ busy=true; openModal(`<h3>Đang đọc tài liệu</h3><div class="spinner"></div><div id="prog" class="mut" style="text-align:center">${esc(msg)}</div>
+  <div class="note">Việc đọc thực hiện ngay trên máy này, không gửi dữ liệu đi đâu. Lần đầu cần Internet để tải bộ nhận dạng chữ (~vài MB).</div>`); }
+function setProgress(msg){ const e=$('#prog'); if(e) e.textContent=msg; }
+function showError(e){ busy=false; console.error(e); openModal(`<h3>Không đọc được</h3><p>${esc(e.message||e)}</p><div class="actions"><button onclick="closeModal()">Đóng</button></div>`); }
+
+function pickFiles(pid){ // pid = null: nhập chung, tự nhận bệnh nhân
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*,application/pdf'; inp.multiple=true;
+  inp.onchange=()=>{ if(inp.files.length) processFiles(pid,[...inp.files]); };
+  inp.click();
+}
+async function processFiles(pid, files){
+  showProgress('Đang chuẩn bị…');
+  try{
+    const stored=[]; let text=''; const src=new Set(); let preview=null, qr='';
+    for(let i=0;i<files.length;i++){
+      const f=files[i], pre=files.length>1?`Tệp ${i+1}/${files.length}: `:'';
+      setProgress(pre+f.name);
+      const r=await extractFromFile(f, m=>setProgress(pre+m));
+      text+=r.text+'\n'; src.add(r.src); stored.push({name:r.name,type:r.type,blob:r.blob,text:r.text}); qr=qr||r.qr||'';
+      if(!preview && r.type.startsWith('image/')) preview=r.blob;
+    }
+    const a=analyze(text); if(qr && a.kind==='img') a.img.link=qr;
+    startReview(a, {files:stored, source:[...src].join(', '), preview, ctxPid:pid, qrFound:!!qr});
+  }catch(e){ showError(e); }
+}
+async function extractFromFile(f, prog=setProgress){
+  if(f.type==='application/pdf' || /\.pdf$/i.test(f.name)){
+    const r=await pdfText(f,prog); const qr=await pdfQr(f,prog); return {...r, qr, name:f.name, type:'application/pdf', blob:f};
+  }
+  if(f.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp|gif)$/i.test(f.name)){
+    const c=await imageToCanvas(f);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.85));
+    const text=await ocrCanvas(c,prog);
+    const qr=qrFromCanvas(c);
+    return {text, qr, src:'nhận dạng chữ từ ảnh', name:f.name.replace(/\.\w+$/,'')+'.jpg', type:'image/jpeg', blob};
+  }
+  throw new Error(`Định dạng không hỗ trợ: ${f.name}. Chỉ nhận ảnh (JPG, PNG) hoặc PDF.`);
+}
+/* --- Đọc mã QR (jsQR, chạy trên máy) --- */
+function qrFromCanvas(c){
+  if(!window.jsQR) return '';
+  const g=c.getContext('2d'), {data}=g.getImageData(0,0,c.width,c.height);
+  const code=jsQR(data,c.width,c.height,{inversionAttempts:'attemptBoth'});
+  return code&&code.data?code.data.trim():'';
+}
+async function pdfQr(file,prog=()=>{}){ // thử 4 trang đầu, dừng khi thấy QR
+  try{ await loadScript(JSQR); }catch(e){ return ''; }
+  prog('Đang tìm mã QR…');
+  const doc=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  for(let i=1;i<=Math.min(4,doc.numPages);i++){
+    const page=await doc.getPage(i); const vp=page.getViewport({scale:2});
+    const c=document.createElement('canvas'); c.width=vp.width; c.height=vp.height;
+    const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height);
+    await page.render({canvasContext:g, viewport:vp}).promise;
+    const link=qrFromCanvas(c); if(link) return link;
+  }
+  return '';
+}
+function imageToCanvas(file){
+  return new Promise((res,rej)=>{ const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{ let w=img.naturalWidth,h=img.naturalHeight; const mx=Math.max(w,h);
+      const k = mx>2600 ? 2600/mx : (w<1400 ? 1400/w : 1);
+      const c=document.createElement('canvas'); c.width=Math.round(w*k); c.height=Math.round(h*k);
+      const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url); res(c); };
+    img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('Không mở được ảnh (ảnh HEIC của iPhone: hãy chụp màn hình hoặc chuyển sang JPG).')); };
+    img.src=url; });
+}
+function getOcr(){
+  return ocrWorkerP ||= (async()=>{
+    ocrProg('Đang tải bộ nhận dạng tiếng Việt (lần đầu có thể mất 10–30 giây)…');
+    await loadScript(TESSERACT);
+    const w=await Tesseract.createWorker('vie',1,{logger:m=>{ if(m.status==='recognizing text') ocrProg(`Đang nhận dạng chữ… ${Math.round(m.progress*100)}%`); }});
+    await w.setParameters({tessedit_pageseg_mode:'6', preserve_interword_spaces:'1'});
+    return w;
+  })().catch(e=>{ ocrWorkerP=null; throw e; });
+}
+let ocrQueue=Promise.resolve();
+function ocrCanvas(c,prog=()=>{}){ // xếp hàng: mỗi lần nhận dạng một ảnh
+  const job=ocrQueue.then(async()=>{ ocrProg=prog; const w=await getOcr(); const {data}=await w.recognize(c); return data.text||''; });
+  ocrQueue=job.catch(()=>{}); return job;
+}
+async function pdfText(file,prog=()=>{}){
+  prog('Đang mở PDF…');
+  await loadScript(PDFJS); pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;
+  const doc=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  let out='', usedOcr=false;
+  for(let i=1;i<=doc.numPages;i++){
+    const page=await doc.getPage(i); const tc=await page.getTextContent(); let t=groupLines(tc.items);
+    if(t.replace(/\s/g,'').length<40){
+      usedOcr=true; const vp=page.getViewport({scale:2.5}); const c=document.createElement('canvas'); c.width=vp.width; c.height=vp.height;
+      const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height);
+      await page.render({canvasContext:g, viewport:vp}).promise; t=await ocrCanvas(c,m=>prog(`Trang ${i}/${doc.numPages}: ${m}`));
+    }
+    out+=t+'\n';
+  }
+  return {text:out, src:usedOcr?'PDF scan (nhận dạng chữ)':'văn bản PDF'};
+}
+function groupLines(items){
+  const it=items.filter(i=>i.str&&i.str.trim()).map(i=>({s:i.str,x:i.transform[4],y:i.transform[5],w:i.width||0,h:Math.abs(i.transform[3])||8}));
+  const lines=[];
+  it.sort((a,b)=>b.y-a.y||a.x-b.x).forEach(i=>{ let L=lines.find(l=>Math.abs(l.y-i.y)<Math.max(2.5,i.h*0.4)); if(!L){L={y:i.y,items:[]};lines.push(L);} L.items.push(i); });
+  return lines.sort((a,b)=>b.y-a.y).map(l=>{ l.items.sort((a,b)=>a.x-b.x); let s='',end=null;
+    for(const i of l.items){ if(end!=null){ const gap=i.x-end; s+= gap>6?'   ':gap>0.8?' ':''; } s+=i.s; end=i.x+i.w; } return s; }).join('\n');
+}
+
+/* ---------- Phân tích văn bản ---------- */
+const UNITS=[[/x?\s*10\s*[\^*]?\s*9\s*\/\s*l\b/,'G/L'],[/x?\s*10\s*[\^*]?\s*12\s*\/\s*l\b/,'T/L'],[/ml\s*\/\s*(?:min|ph(?:ut)?)\s*\/\s*1[.,]73\s*m?2?/,'mL/ph/1.73m²'],
+  [/[µμu]mol\s*\/?\s*l\b/,'µmol/L'],[/mmol\s*\/?\s*l\b/,'mmol/L'],[/mg\s*\/\s*dl\b/,'mg/dL'],[/mg\s*\/\s*l\b/,'mg/L'],[/\bg\s*\/\s*dl\b/,'g/dL'],[/ng\s*\/?\s*m[kl]?l\b/,'ng/mL'],
+  [/pg\s*\/?\s*ml\b/,'pg/mL'],[/ng\s*\/\s*l\b/,'ng/L'],[/\b(?:i?u)\s*\/\s*l\b/,'U/L'],[/\bg\s*\/\s*l\b/,'g/L'],[/\bt\s*\/\s*l\b/,'T/L'],[/\bfl\b/,'fL'],[/%/,'%'],[/\b(?:giay|sec)\b/,'giây']];
+const NUM='\\d+(?:[.,]\\d+)?';
+function parseRest(rest){
+  let r=(' '+rest+' ').replace(/(\d)\s*:\s*(\d)/g,'$1.$2'), unit='';
+  for(const [re,u] of UNITS){ if(re.test(r)){ unit=u; r=r.replace(re,' '); break; } }
+  let lo=null, hi=null, ranged=false;
+  const rg=r.match(new RegExp(`(${NUM})\\s*[-–—~]\\s*(${NUM})`));
+  if(rg){ lo=num(rg[1]); hi=num(rg[2]); ranged=true; r=r.replace(rg[0],' '); }
+  else {
+    const lt=r.match(new RegExp(`(?:<=|<|≤)\\s*(${NUM})`)); if(lt){ hi=num(lt[1]); ranged=true; r=r.replace(lt[0],' '); }
+    const gt=r.match(new RegExp(`(?:>=|>|≥)\\s*(${NUM})`)); if(gt){ lo=num(gt[1]); ranged=true; r=r.replace(gt[0],' '); }
+  }
+  const v=r.match(new RegExp(NUM));
+  return {value:v?num(v[0]):null, unit, lo, hi, ranged};
+}
+const DATE_RE=/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{4})/;
+function mkDate(d,m,y){ d=+d; m=+m; y=+y; if(y<1900||m<1||m>12||d<1||d>31) return ''; return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function findDate(N){
+  const t=today(), ds=[];
+  const add=(d,m,y)=>{ const s=mkDate(d,m,y); if(s && s>='2000' && s<=t) ds.push(s); };
+  for(const m of N.matchAll(/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{4})/g)) add(m[1],m[2],m[3]);
+  for(const m of N.matchAll(/ngay\s*(\d{1,2})\s*thang\s*(\d{1,2})\s*nam\s*(\d{4})/g)) add(m[1],m[2],m[3]);
+  return ds.sort().pop() || t;
+}
+/* --- Thông tin hành chính --- */
+const LABEL_STOP=/\s{2,}|\b(?:nam\s*sinh|ngay\s*sinh|tuoi|gioi(?:\s*tinh)?|ma\s*(?:so\s*)?(?:bn|benh\s*nhan|nguoi\s*benh|y\s*te|hsba|ho\s*so|luu\s*tru|dieu\s*tri|ba)|so\s*(?:hsba|benh\s*an|vao\s*vien|luu\s*tru)|khoa|giuong|buong|dia\s*chi|dien\s*thoai|sdt|so\s*the|bhyt|the\s*bhyt|dan\s*toc|nghe\s*nghiep|chan\s*doan|doi\s*tuong|quoc\s*tich|cccd|cmnd)\b/;
+function grab(lines, re){
+  for(const L of lines){ const N=strip(L); const m=re.exec(N); if(!m) continue;
+    const start=m.index+m[0].length, restN=N.slice(start), lead=restN.match(/^[\s:.\-–]*(?:\([^)]{0,30}\)[\s:.\-–]*)?/)[0].length, body=restN.slice(lead);
+    const s=body.search(LABEL_STOP);
+    const v=L.slice(start+lead, start+lead+(s>=0?s:body.length)).trim().replace(/[,;.]+$/,'').trim();
+    if(v) return v; }
+  return '';
+}
+const titleCase = s => s.toLowerCase().replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toUpperCase());
+const alnum = s => strip(s||'').replace(/[^a-z0-9]/g,'');
+function extractInfo(text){
+  const lines=text.split(/\r?\n/), N=strip(text), cy=new Date().getFullYear();
+  const info={name:'',code:'',yob:'',sex:'',setting:'',ward:'',dx:'',admitDate:'',phone:'',address:''};
+  let nm=grab(lines,/ho\s*(?:va\s*)?ten(?:\s*(?:nguoi\s*benh|benh\s*nhan))?(?!\s*(?:nguoi\s*nha|bac\s*si|bo\b|me\b|cha\b|nguoi\s*(?:than|giam\s*ho|dai\s*dien|lien\s*he)))/)
+       || grab(lines,/^\s*(?:nguoi\s*benh|benh\s*nhan)\s*(?=:)/);
+  nm=nm.replace(/[^A-Za-zÀ-ỹ\s]/g,' ').replace(/\s+/g,' ').trim();
+  if(nm && nm.split(' ').length>=2 && nm.split(' ').length<=6) info.name=titleCase(nm);
+  let y=grab(lines,/nam\s*sinh/).match(/\b(19|20)\d{2}\b/);
+  if(!y) y=grab(lines,/ngay\s*sinh/).match(/\b(19|20)\d{2}\b/);
+  if(y) info.yob=y[0];
+  else { const a=grab(lines,/\btuoi\b/).match(/^\d{1,3}/); if(a && +a[0]<120) info.yob=String(cy-(+a[0])); }
+  const g=strip(grab(lines,/\bgioi(?:\s*tinh)?/));
+  if(/^nam/.test(g)) info.sex='Nam'; else if(/^nu/.test(g)) info.sex='Nữ';
+  for(const re of [/ma\s*(?:so\s*)?(?:bn|benh\s*nhan|nguoi\s*benh|y\s*te)\b|\bpid\b/, /ma\s*(?:hsba|ho\s*so|benh\s*an|dieu\s*tri)\b|so\s*(?:hsba|benh\s*an|vao\s*vien)\b/, /(?:ma|so)\s*luu\s*tru\b/]){
+    const c=grab(lines,re).match(/[A-Za-z0-9][A-Za-z0-9\-\/.]{3,}/); if(c){ info.code=c[0]; break; } }
+  const khoa=grab(lines,/\bkhoa(?:\s*(?:dieu\s*tri|phong))?\s*(?=:)/), giuong=grab(lines,/\bgiuong(?:\s*so)?\b/).match(/^[A-Za-z0-9\-]+/), buong=grab(lines,/\bbuong(?:\s*so)?\b/).match(/^[A-Za-z0-9\-]+/);
+  info.ward=[khoa, buong?'buồng '+buong[0]:'', giuong?'giường '+giuong[0]:''].filter(Boolean).join(' – ');
+  info.address=grab(lines,/dia\s*chi(?:\s*(?:lien\s*he|thuong\s*tru|hien\s*tai|nha))?/).slice(0,150);
+  info.dx=grab(lines,/chan\s*doan(?!\s*hinh\s*anh)(?:\s*(?:vao\s*vien|chinh|xac\s*dinh|so\s*bo|khi\s*vao(?:\s*vien)?|ra\s*vien|benh\s*chinh|noi\s*chuyen\s*den|tuyen\s*duoi))?/).slice(0,300);
+  const ad=N.match(/(?:vao\s*vien|nhap\s*vien|ngay\s*vao|vao\s*luc|ngay\s*kham|thoi\s*gian\s*vao)[^\n]{0,30}?(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{4})/)
+        || N.match(/(?:vao\s*vien|nhap\s*vien)[^\n]{0,30}?ngay\s*(\d{1,2})\s*thang\s*(\d{1,2})\s*nam\s*(\d{4})/);
+  if(ad) info.admitDate=mkDate(ad[1],ad[2],ad[3]);
+  const ph=N.match(/(?:dien\s*thoai|\bdt\b|\bsdt\b)[^\d+\n]{0,5}((?:\+?84|0)\d[\d .]{7,13})/);
+  if(ph){ const d=ph[1].replace(/\D/g,''); if(d.length>=10&&d.length<=12) info.phone=d; }
+  if(info.ward || /vao\s*vien|nhap\s*vien|noi\s*tru/.test(N)) info.setting='NT';
+  else if(/phong\s*kham|ngoai\s*tru/.test(N)) info.setting='PK';
+  info.count=['name','yob','sex','code','ward','dx','admitDate'].filter(k=>info[k]).length;
+  return info;
+}
+function analyze(text){
+  const labs=[], seen=new Set();
+  for(const raw of text.split(/\r?\n/)){
+    const ln=normLine(raw); if(!ln || !/\d/.test(ln)) continue;
+    let best=null;
+    for(const A of ALIAS){ const m=A.re.exec(ln); if(!m) continue; const end=m.index+m[0].length, pos=end-A.al.length;
+      if(!best||pos<best.pos||(pos===best.pos&&A.al.length>best.A.al.length)) best={A,pos,end}; }
+    if(!best||!best.A.t.n) continue;
+    const r=parseRest(ln.slice(best.end)); if(r.value==null) continue;
+    let t=best.A.t;
+    if(t.n==='PCT'&&r.unit==='%') continue;
+    if(t.n==='NEU%'&&r.unit==='G/L') t=TBY['neu#'];
+    if(seen.has(t.n)) continue; seen.add(t.n);
+    const unit=(r.unit&&t.u&&r.unit.toLowerCase()===t.u.toLowerCase())?t.u:(r.unit||t.u||'');
+    labs.push({inc:true, test:t.n, value:r.value, unit, lo:r.ranged?r.lo:t.lo, hi:r.ranged?r.hi:t.hi});
+  }
+  const N=strip(text);
+  let modality='', region='';
+  const MODS=[[/sieu\s*am/,'Siêu âm'],[/cat\s*lop|\bct\b|\bmsct\b/,'CT'],[/cong\s*huong\s*tu|\bmri\b/,'MRI'],[/x[\s\-]?quang|\bxq\b/,'X-quang'],[/noi\s*soi/,'Nội soi'],[/dien\s*tim|dien\s*tam\s*do|\becg\b/,'Điện tim']];
+  const rawLines=text.split(/\r?\n/);
+  outer: for(const [re,name] of MODS){ for(const L of rawLines){ const m=strip(L).match(re); if(m){ modality=name;
+        region=L.slice(m.index+m[0].length).replace(/^[\s:.\-–]+/,'').trim();
+        if(region.length>60||!/[a-zA-ZÀ-ỹ]/.test(region)) region='';
+        region=region.charAt(0).toUpperCase()+region.slice(1).toLowerCase(); break outer; } } }
+  let conclusion='';
+  const km=N.match(/ket\s*luan\s*[:.]?/);
+  if(km){ const start=km.index+km[0].length, tail=N.slice(start);
+    const stop=tail.search(/\n[^\n]{0,40}ngay\s*\d{1,2}\s*(?:thang|[\/\-.])|bac\s*si|\bbs\s*[.:]|nguoi\s*(doc|thuc\s*hien|ky)|de\s*nghi|ky\s*ten|ky,|loi\s*dan|\n\s*\n\s*\n/);
+    conclusion=text.slice(start, start+(stop>=0?stop:Math.min(tail.length,800))).trim().slice(0,1000); }
+  const info=extractInfo(text);
+  const isImg = !!conclusion && !!modality;
+  const kind = labs.length>=2 ? 'lab' : isImg ? 'img' : info.count>=3 ? 'info' : (conclusion||modality) ? 'img' : labs.length ? 'lab' : 'other';
+  return {text, labs, kind, date:findDate(N), img:{modality:modality||'Khác', region, acc:'', result:conclusion}, info};
+}
+function matchPatient(info){
+  const code=alnum(info.code), nm=normLine(info.name); let best=null;
+  for(const p of db.patients){
+    let s=0; const why=[];
+    if(code.length>=4 && alnum(p.code)===code){ s+=10; why.push('mã BN'); }
+    if(nm && normLine((p.name||'').replace(/\[.*?\]/g,''))===nm){ s+=5; why.push('họ tên'); }
+    if(s && info.yob && p.yob && +info.yob===+p.yob){ s+=3; why.push('năm sinh'); }
+    if(s && (!best||s>best.s)) best={p,s,why};
+  }
+  if(!best) return null;
+  return {pid:best.p.id, sure:best.s>=8, why:best.why.join(' + ')};
+}
+
+/* ---------- Màn hình xem lại trước khi lưu ---------- */
+const INFO_F=[['name','Họ tên'],['code','Mã BN / HSBA'],['yob','Năm sinh'],['sex','Giới'],['setting','Nơi điều trị'],['ward','Khoa / giường'],['dx','Chẩn đoán'],['admitDate','Ngày vào viện / khám'],['phone','Điện thoại'],['address','Địa chỉ']];
+function startReview(a, extra){
+  pending={...a, ...extra};
+  const m=matchPatient(a.info);
+  pending.match=m;
+  pending.target = extra.ctxPid || (m ? m.pid : 'new');
+  pending.applyInfo = pending.target==='new' || a.kind==='info';
+  renderReview();
+}
+function readReview(){
+  if(!pending) return;
+  pending.kind=$('#rk').value; pending.date=$('#rd').value; pending.target=$('#rp').value;
+  pending.applyInfo = pending.target==='new' || $('#rapply').checked;
+  INFO_F.forEach(([k])=>{ const e=$('#pi_'+k); if(e) pending.info[k]=e.value.trim(); });
+  document.querySelectorAll('#rlabs tr[data-i]').forEach(tr=>{ const L=pending.labs[+tr.dataset.i];
+    L.inc=tr.querySelector('.ri').checked; L.test=tr.querySelector('.rt').value.trim(); L.value=num(tr.querySelector('.rv').value); L.unit=tr.querySelector('.ru').value.trim();
+    const ref=tr.querySelector('.rr').value.trim(); const m=ref.match(/^\s*(-?\d+(?:[.,]\d+)?)?\s*[-–]\s*(-?\d+(?:[.,]\d+)?)?\s*$/);
+    if(!ref){ L.lo=null; L.hi=null; } else if(m){ L.lo=num(m[1]); L.hi=num(m[2]); } });
+  if($('#imod')) pending.img={modality:$('#imod').value, region:$('#ireg').value.trim(), acc:$('#iacc').value.trim(), result:$('#ires').value.trim(), link:($('#ilink')?$('#ilink').value.trim():'')};
+}
+function refStr(L){ return (L.lo==null&&L.hi==null)?'':`${L.lo??''}-${L.hi??''}`; }
+function rerender(){ readReview(); renderReview(); }
+function renderReview(){
+  busy=false; const R=pending, I=R.info, tp=R.target!=='new'?P(R.target):null;
+  const prevUrl=R.preview?URL.createObjectURL(R.preview):null;
+  // cảnh báo khớp bệnh nhân
+  let who='';
+  if(tp){
+    const pn=normLine(tp.name.replace(/\[.*?\]/g,'')), inText=pn.length>3&&normLine(R.text).includes(pn);
+    const codeBad = I.code && tp.code && alnum(I.code)!==alnum(tp.code);
+    const nameBad = I.name && normLine(I.name)!==pn;
+    if(codeBad||nameBad) who=`<div class="alert">⚠️ Phiếu ghi ${nameBad?`tên “${esc(I.name)}”`:''}${nameBad&&codeBad?', ':''}${codeBad?`mã “${esc(I.code)}”`:''} — khác hồ sơ “${esc(tp.name)}”. Kiểm tra lại có đúng bệnh nhân không.</div>`;
+    else if(inText || (R.match&&R.match.pid===tp.id)) who=`<div class="alert ok">✓ Khớp bệnh nhân${R.match&&R.match.pid===tp.id?` theo ${esc(R.match.why)}`:' theo họ tên'}.</div>`;
+    else who=`<div class="alert">⚠️ Không thấy tên “${esc(tp.name)}” trên phiếu — hãy chắc chắn đúng bệnh nhân.</div>`;
+  } else who=`<div class="alert ok">Sẽ tạo bệnh nhân mới từ thông tin dưới đây.</div>`;
+  const opts=[...db.patients].sort((a,b)=>(a.status==='closed')-(b.status==='closed')||a.name.localeCompare(b.name,'vi'))
+    .map(p=>`<option value="${p.id}" ${R.target===p.id?'selected':''}>${esc(p.name)}${p.yob?' ('+esc(p.yob)+')':''}${p.code?' · '+esc(p.code):''}</option>`).join('');
+  const infoInp=([k,l])=>{ const v=I[k]||'';
+    if(k==='sex') return `<div><label>${l}</label><select id="pi_sex"><option value=""></option>${['Nam','Nữ'].map(s=>`<option ${v===s?'selected':''}>${s}</option>`).join('')}</select></div>`;
+    if(k==='setting') return `<div><label>${l}</label><select id="pi_setting"><option value=""></option>${Object.entries(SETTING).map(([a,b])=>`<option value="${a}" ${v===a?'selected':''}>${b}</option>`).join('')}</select></div>`;
+    return `<div><label>${l}</label><input id="pi_${k}" ${k==='admitDate'?'type="date"':''} value="${esc(v)}"></div>`; };
+  const labRows=R.labs.map((L,i)=>{ const f=flag(L.value,L.lo,L.hi), sus=L.value!=null&&((L.hi>0&&L.value>L.hi*4)||(L.lo>0&&L.value<L.lo/4));
+    return `<tr data-i="${i}" ${sus?'title="Giá trị bất thường lớn — có thể đọc sai dấu thập phân"':''}>
+      <td><input type="checkbox" class="ri" style="width:auto" ${L.inc?'checked':''}></td>
+      <td><input class="rt" value="${esc(L.test)}" style="min-width:90px"></td>
+      <td><input class="rv ${f} ${sus?'sus':''}" value="${L.value??''}" inputmode="decimal" style="width:70px"></td>
+      <td><input class="ru" value="${esc(L.unit)}" style="width:72px"></td>
+      <td><input class="rr" value="${esc(refStr(L))}" placeholder="min-max" style="width:82px"></td></tr>`; }).join('');
+  openModal(`<h3>Xem lại trước khi lưu</h3>
+    <div class="mut">Nguồn: ${esc(R.source)}</div>
+    ${/nhận dạng/.test(R.source)?'<div class="alert">Đọc từ ảnh có thể sai số. Đối chiếu với tài liệu gốc trước khi lưu.</div>':''}
+    ${R.qrFound?'<div class="alert ok">✓ Đã đọc mã QR và điền vào “Đường dẫn xem ảnh”.</div>':''}
+    ${prevUrl?`<img class="thumb" src="${prevUrl}" onclick="window.open(this.src)">`:''}
+    <label>Bệnh nhân</label><select id="rp" onchange="rerender()"><option value="new" ${R.target==='new'?'selected':''}>➕ Tạo bệnh nhân mới</option>${opts}</select>
+    ${who}
+    <details ${R.applyInfo?'open':''} style="margin-top:6px"><summary><b>Thông tin hành chính đọc được</b> <span class="mut">(${I.count||0} mục)</span></summary>
+      ${R.target!=='new'?`<label style="display:flex;gap:6px;align-items:center;color:var(--ink)"><input type="checkbox" id="rapply" style="width:auto" ${R.applyInfo?'checked':''}> Cập nhật các ô có giá trị vào hồ sơ</label>`:'<input type="checkbox" id="rapply" checked hidden>'}
+      <div class="two">${INFO_F.filter(([k])=>k!=='dx').map(infoInp).join('')}</div>
+      ${infoInp(['dx','Chẩn đoán'])}
+    </details>
+    <div class="two" style="margin-top:6px"><div><label>Loại tài liệu</label><select id="rk" onchange="rerender()">
+      ${Object.entries(KIND).map(([k,l])=>`<option value="${k}" ${R.kind===k?'selected':''}>${k==='info'?'Phiếu thông tin BN':k==='other'?'Chỉ lưu tệp':l}</option>`).join('')}</select></div>
+      <div><label>Ngày tài liệu</label><input id="rd" type="date" value="${R.date}"></div></div>
+    ${R.kind==='lab'?`<div class="rv"><label>Chỉ số (${R.labs.length} tìm thấy) — bỏ chọn dòng sai, sửa số nếu cần. Ô vàng = nghi đọc sai</label>
+      <div class="scrollx"><table id="rlabs"><tr><th></th><th>Chỉ số</th><th>Kết quả</th><th>Đơn vị</th><th>Tham chiếu</th></tr>${labRows||'<tr><td colspan="5" class="mut">Không nhận ra chỉ số nào.</td></tr>'}</table></div>
+      <button class="sm" style="margin-top:6px" onclick="readReview();pending.labs.push({inc:true,test:'',value:null,unit:'',lo:null,hi:null});renderReview()">＋ Thêm dòng</button></div>`:''}
+    ${R.kind==='img'?`<div class="two"><div><label>Loại</label><select id="imod">${MODALITY.map(m=>`<option ${m===R.img.modality?'selected':''}>${m}</option>`).join('')}</select></div>
+      <div><label>Vùng / bộ phận</label><input id="ireg" value="${esc(R.img.region)}"></div></div>
+      <label>Mã chụp (nếu có)</label><input id="iacc" value="${esc(R.img.acc)}">
+      <label>Kết luận</label><textarea id="ires" style="min-height:110px">${esc(R.img.result)}</textarea>
+      <label>Đường dẫn xem ảnh (tùy chọn)</label><input id="ilink" value="${esc(R.img.link||'')}">`:''}
+    <details style="margin-top:10px"><summary class="mut">Toàn bộ văn bản đọc được</summary><pre style="white-space:pre-wrap;font-size:12px;max-height:240px;overflow:auto;background:#f8fafb;padding:8px;border-radius:8px">${esc(R.text)}</pre></details>
+    <div class="err" id="rerr"></div>
+    <div class="actions"><button onclick="pending=null;closeModal()">Hủy</button><button class="pri" onclick="saveReview()">Lưu vào hồ sơ</button></div>`);
+}
+async function saveReview(){
+  readReview(); const R=pending, I=R.info;
+  if(!R.date) return $('#rerr').textContent='Chọn ngày tài liệu.';
+  const labs=R.kind==='lab'?R.labs.filter(L=>L.inc&&L.test&&L.value!=null):[];
+  if(R.kind==='lab'&&!labs.length) return $('#rerr').textContent='Chưa có chỉ số hợp lệ nào được chọn.';
+  if(R.kind==='img'&&!R.img.result) return $('#rerr').textContent='Chưa có nội dung kết luận.';
+  let p;
+  if(R.target==='new'){
+    if(!I.name) return $('#rerr').textContent='Bệnh nhân mới cần có họ tên — điền vào phần "Thông tin hành chính".';
+    p={id:uid(),visits:[],labs:[],imaging:[],tasks:[],files:[],created:new Date().toISOString(),status:'active',setting:I.setting||(I.ward?'NT':'PK')};
+    db.patients.push(p);
+  } else p=P(R.target);
+  if(R.applyInfo) INFO_F.forEach(([k])=>{ if(I[k]) p[k]=I[k]; });
+  p.files||=[];
+  let fid=R.existingFileId||null;
+  for(const f of R.files){ const id=uid(); fid=fid||id;
+    await filePut({id,pid:p.id,name:f.name,type:f.type,blob:f.blob,text:f.text,date:R.date});
+    p.files.push({id,name:f.name,type:f.type,size:f.blob.size,date:R.date,kind:R.kind}); }
+  if(R.existingFileId){
+    const rec=await fileGet(R.existingFileId);
+    if(rec){ if(rec.pid!==p.id){ // tệp từ hộp chờ hoặc từ bệnh nhân khác
+        for(const q of db.patients) if(q.files) q.files=q.files.filter(f=>f.id!==rec.id);
+        rec.pid=p.id; rec.date=R.date; await filePut(rec); }
+      const m=p.files.find(f=>f.id===rec.id);
+      if(m){ m.kind=R.kind; m.date=R.date; } else p.files.push({id:rec.id,name:rec.name,type:rec.type,size:rec.blob.size,date:R.date,kind:R.kind}); }
+  }
+  if(R.kind==='lab'){ (p.labs||=[]); labs.forEach(L=>p.labs.push({id:uid(),date:R.date,test:L.test,value:L.value,unit:L.unit,lo:L.lo,hi:L.hi,fileId:fid})); }
+  if(R.kind==='img'){ (p.imaging||=[]).push({id:uid(),date:R.date,...R.img,fileId:fid}); }
+  touch(p); pending=null; closeModal(); await save();
+  openPatient(p.id, R.kind==='lab'?'labs':R.kind==='img'?'imaging':R.kind==='info'?'info':'files');
+}
+
+/* ============================================================
+   ĐỒNG BỘ GOOGLE DRIVE (mã hóa đầu cuối bằng mật khẩu)
+   Dữ liệu nằm trong một file mã hóa trong thư mục "So Tay Benh Nhan" trên Drive của người dùng.
+   ============================================================ */
+const GOOGLE_CLIENT_ID='771542294462-425rbdnal1qj9uloqohd8dlm8ohmq4ke.apps.googleusercontent.com';
+const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER='So Tay Benh Nhan', DRIVE_FILE='sotay-data.enc';
+let gToken=null, gTokenExp=0, gFolderId=null, gRemoteMod=null, syncPw=null, syncTimer=null, syncBusy=false;
+function syncOn(){ return !!(gToken&&Date.now()<gTokenExp&&syncPw); }
+function setSync(msg){ const el=document.getElementById('syncmsg'); if(el) el.textContent=msg; }
+function loadGIS(){ return new Promise((res,rej)=>{ if(window.google&&google.accounts) return res();
+  const s=document.createElement('script'); s.src='https://accounts.google.com/gsi/client'; s.onload=res; s.onerror=()=>rej(new Error('Không tải được Google')); document.head.appendChild(s); }); }
+async function driveLogin(){
+  await loadGIS();
+  return new Promise((res,rej)=>{
+    const c=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:DRIVE_SCOPE,
+      callback:r=>{ if(r.error) return rej(new Error(r.error)); gToken=r.access_token; gTokenExp=Date.now()+(r.expires_in-60)*1000; res(); }});
+    c.requestAccessToken({prompt:''});
+  });
+}
+async function gapi(url,opts={}){
+  if(!gToken||Date.now()>=gTokenExp) throw new Error('Hết phiên Google, hãy đăng nhập lại');
+  const r=await fetch(url,{...opts,headers:{Authorization:'Bearer '+gToken,...(opts.headers||{})}});
+  if(!r.ok) throw new Error('Lỗi Drive '+r.status);
+  return r;
+}
+async function driveFolder(){
+  if(gFolderId) return gFolderId;
+  const q=encodeURIComponent(`name='${DRIVE_FOLDER}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const j=await (await gapi(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`)).json();
+  if(j.files&&j.files[0]) return gFolderId=j.files[0].id;
+  const c=await (await gapi('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:DRIVE_FOLDER,mimeType:'application/vnd.google-apps.folder'})})).json();
+  return gFolderId=c.id;
+}
+async function driveFindFile(){
+  const f=await driveFolder();
+  const q=encodeURIComponent(`name='${DRIVE_FILE}' and '${f}' in parents and trashed=false`);
+  const j=await (await gapi(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,modifiedTime)`)).json();
+  return (j.files&&j.files[0])||null;
+}
+async function driveDownload(id){ return (await gapi(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`)).text(); }
+async function driveUpload(text,existing){
+  if(existing){
+    const r=await gapi(`https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=media&fields=id,modifiedTime`,
+      {method:'PATCH',headers:{'Content-Type':'application/octet-stream'},body:text});
+    return (await r.json()).modifiedTime;
+  }
+  const folder=await driveFolder(), b='sotay'+Date.now();
+  const body=`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name:DRIVE_FILE,parents:[folder]})}\r\n--${b}\r\nContent-Type: application/octet-stream\r\n\r\n${text}\r\n--${b}--`;
+  const r=await gapi('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,modifiedTime',
+    {method:'POST',headers:{'Content-Type':`multipart/related; boundary=${b}`},body});
+  return (await r.json()).modifiedTime;
+}
+async function buildPayload(){
+  const files=[]; for(const f of await filesAll()) files.push({...f, blob:undefined, data:await blobToB64(f.blob)});
+  return encryptBackup(JSON.stringify({app:'sotay-bn',v:3,db,files}), syncPw);
+}
+async function applyPayload(text){
+  const o=JSON.parse(text); const inner=JSON.parse(await decryptBackup(o,syncPw));
+  if(inner.app!=='sotay-bn'||!inner.db) throw new Error('Dữ liệu Drive không hợp lệ');
+  await tx('files','readwrite',s=>s.clear());
+  for(const x of (inner.files||[])){ const {data,...rest}=x; await filePut({...rest, blob:b64ToBlob(data,x.type)}); }
+  db=inner.db; await kvSet('db',db);
+}
+async function pushNow(){
+  if(!syncOn()||syncBusy) return;
+  syncBusy=true;
+  try{
+    setSync('Đang đẩy lên Drive…');
+    const meta=await driveFindFile();
+    if(meta&&gRemoteMod&&meta.modifiedTime!==gRemoteMod){ setSync('Drive có thay đổi từ máy khác. Chưa ghi đè. Bấm "Đồng bộ" để tải bản mới trước.'); return; }
+    const mod=await driveUpload(await buildPayload(), meta);
+    gRemoteMod=mod; await kvSet('sync',{remoteMod:mod}); await kvSet('dirty',false);
+    setSync('Đã đồng bộ lúc '+new Date().toLocaleTimeString('vi-VN'));
+  }catch(e){ setSync('Lỗi đồng bộ: '+e.message); }
+  finally{ syncBusy=false; }
+}
+function scheduleSync(){ kvSet('dirty',true); if(!syncOn()) return; clearTimeout(syncTimer); syncTimer=setTimeout(pushNow,1500); }
+async function pullNow(){
+  const meta=await driveFindFile();
+  if(!meta) return false;
+  const text=await driveDownload(meta.id);
+  await applyPayload(text);
+  gRemoteMod=meta.modifiedTime; await kvSet('sync',{remoteMod:gRemoteMod}); await kvSet('dirty',false);
+  return true;
+}
+async function syncFromSettings(){
+  try{
+    if(!gToken||Date.now()>=gTokenExp){ await driveLogin(); }
+    if(!syncPw){ const pw=await askPassword('Mật khẩu mã hóa dữ liệu Drive (phải nhớ, không khôi phục được)', false); if(!pw) return; syncPw=pw; }
+    const dirty=await kvGet('dirty');
+    const meta=await driveFindFile();
+    if(!meta){ setSync('Chưa có dữ liệu trên Drive. Đang tạo…'); await pushNow(); return; }
+    if(dirty){
+      if(!confirm('Máy này có thay đổi chưa đẩy lên, và Drive cũng có dữ liệu. Thay dữ liệu máy này bằng bản trên Drive? (Nếu chọn Hủy, bản trên máy sẽ được đẩy lên và ghi đè Drive.)')){
+        const mod=await driveUpload(await buildPayload(), meta); gRemoteMod=mod; await kvSet('sync',{remoteMod:mod}); await kvSet('dirty',false);
+        setSync('Đã đẩy dữ liệu máy này lên Drive.'); return;
+      }
+    }
+    await pullNow(); render(); setSync('Đã tải dữ liệu từ Drive lúc '+new Date().toLocaleTimeString('vi-VN'));
+  }catch(e){ setSync('Lỗi: '+e.message); }
+}
+
+/* ============================================================
+   CÀI ĐẶT, SAO LƯU
+   ============================================================ */
+function openSettings(){
+  const lb=db.meta&&db.meta.lastBackup;
+  openModal(`<h3>Cài đặt & dữ liệu</h3>
+    <div class="mut">Lần sao lưu cuối: <b>${lb?new Date(lb).toLocaleString('vi-VN'):'chưa sao lưu'}</b></div>
+    <div style="display:grid;gap:8px;margin-top:12px">
+      <button class="pri" onclick="syncFromSettings()">☁ Đồng bộ Google Drive</button>
+      <div id="syncmsg" class="mut"></div>
+      <button class="pri" onclick="backup()">💾 Sao lưu (có mật khẩu, kèm tệp đính kèm)</button>
+      <button onclick="restore()">📂 Khôi phục từ file sao lưu</button>
+      <button onclick="exportCSV()">📄 Xuất danh sách bệnh nhân (CSV)</button>
+      <button onclick="loadDemo()">🧪 Thêm 3 bệnh nhân giả để dùng thử</button>
+      <button class="danger" onclick="wipeAll()">🗑 Xóa toàn bộ dữ liệu trên máy này</button>
+    </div>
+    <div class="actions"><button onclick="closeModal()">Đóng</button></div>`);
+}
+const blobToB64=b=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]); r.onerror=rej; r.readAsDataURL(b); });
+function b64ToBlob(s,type){ const bin=atob(s), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return new Blob([u],{type}); }
+/* --- Mã hóa file sao lưu: AES-GCM, khóa từ mật khẩu qua PBKDF2 --- */
+const bytesB64=u=>{ let s=''; for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(s); };
+const b64Bytes=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function deriveBackupKey(pw,salt){
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encryptBackup(text,pw){
+  const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await deriveBackupKey(pw,salt);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(text)));
+  return JSON.stringify({app:'sotay-bn',enc:1,v:1,salt:bytesB64(salt),iv:bytesB64(iv),ct:bytesB64(ct)});
+}
+async function decryptBackup(o,pw){
+  const key=await deriveBackupKey(pw,b64Bytes(o.salt));
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64Bytes(o.iv)},key,b64Bytes(o.ct));
+  return new TextDecoder().decode(pt);
+}
+function askPassword(title, confirm2){
+  return new Promise(res=>{
+    openModal(`<h3>${esc(title)}</h3><label>Mật khẩu</label><input id="ap1" type="password">
+      ${confirm2?'<label>Nhập lại mật khẩu</label><input id="ap2" type="password">':''}
+      <div class="err" id="aperr"></div>
+      <div class="actions"><button id="apc">Hủy</button><button class="pri" id="apok">OK</button></div>`);
+    $('#ap1').focus();
+    $('#apc').onclick=()=>{ closeModal(); res(null); };
+    const ok=()=>{ const a=$('#ap1').value;
+      if(confirm2){ if(a.length<6) return $('#aperr').textContent='Mật khẩu tối thiểu 6 ký tự.'; if(a!==$('#ap2').value) return $('#aperr').textContent='Hai mật khẩu không khớp.'; }
+      if(!a) return $('#aperr').textContent='Chưa nhập mật khẩu.';
+      closeModal(); res(a); };
+    $('#apok').onclick=ok;
+    $('#ap1').onkeydown=e=>{ if(e.key==='Enter'&&!confirm2) ok(); };
+    if(confirm2) $('#ap2').onkeydown=e=>{ if(e.key==='Enter') ok(); };
+  });
+}
+async function backup(){
+  const pw=await askPassword('Mật khẩu cho file sao lưu', true); if(!pw) return;
+  db.meta||={}; db.meta.lastBackup=new Date().toISOString(); await save();
+  const files=[]; for(const f of await filesAll()) files.push({...f, blob:undefined, data:await blobToB64(f.blob)});
+  const enc=await encryptBackup(JSON.stringify({app:'sotay-bn',v:2,db,files}), pw);
+  download(`sotay_benhnhan_${today()}.sotay`, enc, 'application/json'); closeModal(); render();
+  alert('Đã tạo file sao lưu đã mã hóa. Hãy ghi nhớ mật khẩu: không có mật khẩu sẽ không mở được file.');
+}
+function restore(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.sotay,.json,application/json';
+  inp.onchange=async()=>{ const f=inp.files[0]; if(!f) return;
+    let o; try{ o=JSON.parse(await f.text()); }catch(e){ return alert('File không hợp lệ.'); }
+    let inner=o;
+    if(o.enc){
+      const pw=await askPassword('Mật khẩu của file sao lưu'); if(!pw) return;
+      try{ inner=JSON.parse(await decryptBackup(o,pw)); }catch(e){ return alert('Sai mật khẩu hoặc file bị hỏng.'); }
+    }
+    if(inner.app!=='sotay-bn'||!inner.db) return alert('File không hợp lệ.');
+    if(!confirm(`File có ${inner.db.patients.length} bệnh nhân, ${(inner.files||[]).length} tệp. Thay thế toàn bộ dữ liệu hiện tại?`)) return;
+    try{
+      await tx('files','readwrite',s=>s.clear());
+      for(const x of (inner.files||[])){ const {data,...rest}=x; await filePut({...rest, blob:b64ToBlob(data,x.type)}); }
+      db=inner.db; await save(); closeModal(); closePanel();
+      alert(o.enc?'Đã khôi phục.':'Đã khôi phục. Lưu ý: file này không được mã hóa, hãy sao lưu lại bằng định dạng mới.');
+    }catch(e){ alert('Khôi phục thất bại: '+e.message); }
+  };
+  inp.click();
+}
+function exportCSV(){
+  const cols=[['name','Họ tên'],['code','Mã BN'],['yob','Năm sinh'],['sex','Giới'],['phone','Điện thoại'],['address','Địa chỉ'],['setting','Nơi điều trị'],['ward','Khoa/giường'],['dx','Chẩn đoán'],['admitDate','Ngày vào'],['followUp','Hẹn tái khám'],['status','Trạng thái']];
+  const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const rows=[cols.map(c=>q(c[1])).join(',')].concat(db.patients.map(p=>cols.map(([k])=>q(k==='setting'?SETTING[p[k]]:k==='status'?STATUS[p[k]||'active']:p[k])).join(',')));
+  download(`danhsach_benhnhan_${today()}.csv`,'﻿'+rows.join('\r\n'),'text/csv;charset=utf-8');
+}
+async function wipeAll(){
+  if(!confirm('Xóa TOÀN BỘ dữ liệu trên máy này? Không thể hoàn tác.')) return;
+  if(prompt('Gõ XOA để xác nhận')!=='XOA') return;
+  await tx('files','readwrite',s=>s.clear()); db=newDb(); await save(); closeModal(); closePanel();
+}
+async function loadDemo(){
+  const d=n=>addDays(n), mk=o=>({id:uid(),visits:[],labs:[],imaging:[],tasks:[],files:[],created:new Date().toISOString(),updated:new Date().toISOString(),...o});
+  const L=(date,n,value)=>{ const t=TBY[n.toLowerCase()]; return {id:uid(),date,test:t.n,value,unit:t.u,lo:t.lo,hi:t.hi}; };
+  db.patients.push(
+    mk({name:'[MẪU] Nguyễn Văn A',code:'DEMO-001',yob:'1958',sex:'Nam',setting:'NT',ward:'HSTC – giường 12',dx:'Viêm phổi cộng đồng nặng / Đái tháo đường typ 2',admitDate:d(-6),status:'active',history:'Dị ứng: chưa ghi nhận',
+      visits:[{id:uid(),date:d(-6),kind:'Khám',text:'Sốt 39°C, ho đờm, SpO2 89% khí trời. Ran nổ đáy phổi phải.\nXử trí: thở oxy, kháng sinh theo kinh nghiệm.'},{id:uid(),date:d(-2),kind:'Diễn biến',text:'Hết sốt, SpO2 95% với oxy kính 2 L/ph.'}],
+      labs:[L(d(-6),'WBC',16.8),L(d(-4),'WBC',13.1),L(d(-1),'WBC',9.2),L(d(-6),'CRP',142),L(d(-4),'CRP',88),L(d(-1),'CRP',21),L(d(-6),'Glucose',13.5),L(d(-1),'Glucose',8.1),L(d(-1),'K',3.2)],
+      imaging:[{id:uid(),date:d(-6),modality:'X-quang',region:'Ngực thẳng',acc:'DEMO-XQ-01',result:'Đám mờ thùy dưới phổi phải.'}],
+      tasks:[{id:uid(),text:'Chụp lại X-quang ngực',due:d(1),done:false},{id:uid(),text:'Bù kali, xét nghiệm lại điện giải',due:d(0),done:false}]}),
+    mk({name:'[MẪU] Trần Thị B',code:'DEMO-002',yob:'1979',sex:'Nữ',setting:'PK',ward:'Phòng khám ngoài',dx:'Hội chứng De Quervain tay phải',admitDate:d(-21),followUp:d(0),status:'active',
+      visits:[{id:uid(),date:d(-21),kind:'Khám',text:'Đau mỏm trâm quay phải 3 tuần, Finkelstein (+).\nNẹp ngón cái, NSAID 7 ngày.'}],
+      imaging:[{id:uid(),date:d(-21),modality:'Siêu âm',region:'Cổ tay phải',acc:'',result:'Dày bao gân khoang I (APL/EPB), tăng tưới máu nhẹ.'}],
+      tasks:[{id:uid(),text:'Đánh giá đáp ứng, cân nhắc tiêm corticoid',due:d(0),done:false}]}),
+    mk({name:'[MẪU] Lê Văn C',code:'DEMO-003',yob:'1965',sex:'Nam',setting:'PK',ward:'Phòng khám ngoài',dx:'Tăng huyết áp / Rối loạn lipid máu',admitDate:d(-120),followUp:d(-3),status:'active',
+      labs:[L(d(-120),'Creatinin',98),L(d(-30),'Creatinin',104),L(d(-120),'HbA1c',6.4),L(d(-30),'HbA1c',6.1)],
+      visits:[{id:uid(),date:d(-30),kind:'Khám',text:'HA 135/85. Tiếp tục thuốc cũ.'}]})
+  );
+  await commit(); closeModal(); go('list');
+}
+
+/* ============================================================
+   KHỞI ĐỘNG
+   ============================================================ */
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!busy){ if(!$('#modal').hidden) closeModal(); else if(!$('#panel').hidden) closePanel(); } });
+(async()=>{
+  try{ idb=await openIDB(); db=await kvGet('db')||newDb(); if(!db.patients) db=newDb(); }
+  catch(e){ $('#main').innerHTML='<div class="card">Trình duyệt không cho lưu dữ liệu (chế độ ẩn danh?). Hãy mở bằng Chrome/Edge thường.</div>'; return; }
+  if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+  const sy=await kvGet('sync'); if(sy) gRemoteMod=sy.remoteMod;
+  render();
+})();
+</script>
+</body>
+</html>
