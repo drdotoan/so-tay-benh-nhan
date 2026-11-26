@@ -969,7 +969,7 @@ async function saveReview(){
   p.files||=[];
   let fid=R.existingFileId||null;
   for(const f of R.files){ const id=uid(); fid=fid||id;
-    await filePut({id,pid:p.id,name:f.name,type:f.type,blob:f.blob,text:f.text,date:R.date});
+    await filePut({id,pid:p.id,name:f.name,type:f.type,blob:f.blob,text:f.text,date:R.date}); pushAttachment(id);
     p.files.push({id,name:f.name,type:f.type,size:f.blob.size,date:R.date,kind:R.kind}); }
   if(R.existingFileId){
     const rec=await fileGet(R.existingFileId);
@@ -1052,15 +1052,63 @@ async function driveUpload(text,existing){
   return (await r.json()).modifiedTime;
 }
 async function buildPayload(){
-  const files=[]; for(const f of await filesAll()) files.push({...f, blob:undefined, data:await blobToB64(f.blob)});
-  return encryptBackup(JSON.stringify({app:'sotay-bn',v:3,db,files}), syncPw);
+  return encryptBackup(JSON.stringify({app:'sotay-bn',v:4,db}), syncPw);
 }
 async function applyPayload(text){
   const o=JSON.parse(text); const inner=JSON.parse(await decryptBackup(o,syncPw));
   if(inner.app!=='sotay-bn'||!inner.db) throw new Error('Dữ liệu Drive không hợp lệ');
-  await tx('files','readwrite',s=>s.clear());
   for(const x of (inner.files||[])){ const {data,...rest}=x; await filePut({...rest, blob:b64ToBlob(data,x.type)}); }
   db=inner.db; await kvSet('db',db);
+}
+/* Tệp đính kèm: mỗi tệp là một file mã hóa riêng trong thư mục "Tep dinh kem" của Drive */
+let gAttachFolder=null;
+async function attachFolder(){
+  if(gAttachFolder) return gAttachFolder;
+  const parent=await driveFolder();
+  const q=encodeURIComponent(`name='Tep dinh kem' and '${parent}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const j=await (await gapi(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`)).json();
+  if(j.files&&j.files[0]) return gAttachFolder=j.files[0].id;
+  const c=await (await gapi('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:'Tep dinh kem',mimeType:'application/vnd.google-apps.folder',parents:[parent]})})).json();
+  return gAttachFolder=c.id;
+}
+async function listAttachments(){
+  const f=await attachFolder(), out={}; let token='';
+  do{
+    const q=encodeURIComponent(`'${f}' in parents and trashed=false`);
+    const j=await (await gapi(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=nextPageToken,files(id,name)&pageSize=1000${token?'&pageToken='+token:''}`)).json();
+    (j.files||[]).forEach(x=>{ if(x.name.endsWith('.enc')) out[x.name.slice(0,-4)]=x.id; });
+    token=j.nextPageToken||'';
+  }while(token);
+  return out;
+}
+async function createDriveFile(name,parentId,text){
+  const b='sotay'+Date.now()+Math.random().toString(36).slice(2);
+  const body=`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name,parents:[parentId]})}\r\n--${b}\r\nContent-Type: application/octet-stream\r\n\r\n${text}\r\n--${b}--`;
+  await gapi('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':`multipart/related; boundary=${b}`},body});
+}
+async function pushAttachment(id){
+  if(!syncOn()) return;
+  try{
+    const rec=await fileGet(id); if(!rec) return;
+    const text=await encryptBackup(JSON.stringify({id,pid:rec.pid,name:rec.name,type:rec.type,date:rec.date,text:rec.text||'',data:await blobToB64(rec.blob)}), syncPw);
+    await createDriveFile(id+'.enc', await attachFolder(), text);
+    const up=(await kvGet('upl'))||[]; if(!up.includes(id)){ up.push(id); await kvSet('upl',up); }
+  }catch(e){ setSync('Chưa tải được tệp lên Drive: '+e.message); }
+}
+async function syncAttachments(){
+  if(!syncOn()) return;
+  const remote=await listAttachments(), up=new Set((await kvGet('upl'))||[]);
+  for(const p of db.patients) for(const m of (p.files||[])){
+    if(await fileGet(m.id)) continue;
+    const rid=remote[m.id]; if(!rid) continue;
+    const inner=JSON.parse(await decryptBackup(JSON.parse(await driveDownload(rid)),syncPw));
+    await filePut({id:m.id,pid:p.id,name:inner.name,type:inner.type,date:inner.date,text:inner.text,blob:b64ToBlob(inner.data,inner.type)});
+  }
+  for(const p of db.patients) for(const m of (p.files||[])){
+    if(remote[m.id]||up.has(m.id)) continue;
+    if(await fileGet(m.id)) await pushAttachment(m.id);
+  }
 }
 async function pushNow(){
   if(!syncOn()||syncBusy) return;
@@ -1091,14 +1139,14 @@ async function syncFromSettings(){
     const dirty=await kvGet('dirty');
     const meta=await driveFindFile();
     await kvSet('driveOn',true);
-    if(!meta){ setSync('Chưa có dữ liệu trên Drive. Đang tạo…'); await pushNow(); return; }
+    if(!meta){ setSync('Chưa có dữ liệu trên Drive. Đang tạo…'); await pushNow(); await syncAttachments().catch(()=>{}); return; }
     if(dirty){
       if(!confirm('Máy này có thay đổi chưa đẩy lên, và Drive cũng có dữ liệu. Thay dữ liệu máy này bằng bản trên Drive? (Nếu chọn Hủy, bản trên máy sẽ được đẩy lên và ghi đè Drive.)')){
         const mod=await driveUpload(await buildPayload(), meta); gRemoteMod=mod; await kvSet('sync',{remoteMod:mod}); await kvSet('dirty',false);
         setSync('Đã đẩy dữ liệu máy này lên Drive.'); return;
       }
     }
-    await pullNow(); await kvSet('driveOn',true); render(); setSync('Đã tải dữ liệu từ Drive lúc '+new Date().toLocaleTimeString('vi-VN'));
+    await pullNow(); await kvSet('driveOn',true); await syncAttachments().catch(e=>setSync('Lỗi tải tệp: '+e.message)); render(); setSync('Đã tải dữ liệu từ Drive lúc '+new Date().toLocaleTimeString('vi-VN'));
   }catch(e){ setSync('Lỗi: '+e.message); }
 }
 
