@@ -954,13 +954,21 @@ function syncOn(){ return !!(gToken&&Date.now()<gTokenExp&&syncPw); }
 function setSync(msg){ const el=document.getElementById('syncmsg'); if(el) el.textContent=msg; }
 function loadGIS(){ return new Promise((res,rej)=>{ if(window.google&&google.accounts) return res();
   const s=document.createElement('script'); s.src='https://accounts.google.com/gsi/client'; s.onload=res; s.onerror=()=>rej(new Error('Không tải được Google')); document.head.appendChild(s); }); }
-async function driveLogin(){
+async function driveLogin(silent=false){
   await loadGIS();
   return new Promise((res,rej)=>{
     const c=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:DRIVE_SCOPE,
-      callback:r=>{ if(r.error) return rej(new Error(r.error)); gToken=r.access_token; gTokenExp=Date.now()+(r.expires_in-60)*1000; res(); }});
-    c.requestAccessToken({prompt:''});
+      callback:r=>{ if(r.error) return rej(new Error(r.error)); gToken=r.access_token; gTokenExp=Date.now()+(r.expires_in-60)*1000; res(); },
+      error_callback:e=>rej(new Error(e&&e.type||'không đăng nhập được'))});
+    c.requestAccessToken({prompt: silent?'none':''});
   });
+}
+/* Tự động: khi mở app, nếu trước đó đã kết nối Drive thì đăng nhập Google ngầm và hỏi mật khẩu mã hóa */
+async function autoConnect(){
+  if(!(await kvGet('driveOn'))) return;
+  try{ await driveLogin(true); }catch(e){ return; }
+  if(!syncPw){ const pw=await askPassword('Nhập mật khẩu mã hóa để đồng bộ Google Drive', false); if(!pw) return; syncPw=pw; }
+  await syncFromSettings();
 }
 async function gapi(url,opts={}){
   if(!gToken||Date.now()>=gTokenExp) throw new Error('Hết phiên Google, hãy đăng nhập lại');
@@ -1035,6 +1043,7 @@ async function syncFromSettings(){
     if(!syncPw){ const pw=await askPassword('Mật khẩu mã hóa dữ liệu Drive (phải nhớ, không khôi phục được)', false); if(!pw) return; syncPw=pw; }
     const dirty=await kvGet('dirty');
     const meta=await driveFindFile();
+    await kvSet('driveOn',true);
     if(!meta){ setSync('Chưa có dữ liệu trên Drive. Đang tạo…'); await pushNow(); return; }
     if(dirty){
       if(!confirm('Máy này có thay đổi chưa đẩy lên, và Drive cũng có dữ liệu. Thay dữ liệu máy này bằng bản trên Drive? (Nếu chọn Hủy, bản trên máy sẽ được đẩy lên và ghi đè Drive.)')){
@@ -1042,7 +1051,7 @@ async function syncFromSettings(){
         setSync('Đã đẩy dữ liệu máy này lên Drive.'); return;
       }
     }
-    await pullNow(); render(); setSync('Đã tải dữ liệu từ Drive lúc '+new Date().toLocaleTimeString('vi-VN'));
+    await pullNow(); await kvSet('driveOn',true); render(); setSync('Đã tải dữ liệu từ Drive lúc '+new Date().toLocaleTimeString('vi-VN'));
   }catch(e){ setSync('Lỗi: '+e.message); }
 }
 
@@ -1169,6 +1178,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!busy){ if(!$('#mo
   catch(e){ $('#main').innerHTML='<div class="card">Trình duyệt không cho lưu dữ liệu (chế độ ẩn danh?). Hãy mở bằng Chrome/Edge thường.</div>'; return; }
   if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
   const sy=await kvGet('sync'); if(sy) gRemoteMod=sy.remoteMod;
+  autoConnect();
   render();
 })();
 </script>
