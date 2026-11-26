@@ -226,7 +226,7 @@ async function save(){ await kvSet('db', db); scheduleSync(); }
 /* ============================================================
    TRẠNG THÁI & MÀN HÌNH CHÍNH
    ============================================================ */
-const state = {view:'home', q:'', fSetting:'all', fStatus:'active', open:null, tab:'info', labTest:null, tFilter:'open'};
+const state = {sub:{labs:'all',imaging:'all',care:'open'}, view:'home', q:'', fSetting:'all', fStatus:'active', open:null, tab:'info', labTest:null, tFilter:'open'};
 const P = id => db.patients.find(p=>p.id===id);
 function touch(p){ p.updated=new Date().toISOString(); }
 async function commit(){ await save(); render(); if(state.open) renderPanel(); }
@@ -272,7 +272,7 @@ function homeHTML(){
   </div>
   <div class="card"><h2>⚠️ Kết quả mới nhất còn bất thường (7 ngày qua)</h2>
     ${ab.length?`<table><tr><th>Bệnh nhân</th><th>Ngày</th><th>XN</th><th>Kết quả</th></tr>
-      ${ab.slice(0,40).map(({p,l,f})=>`<tr class="click" onclick="openPatient('${p.id}','${labGroup(l.test)}')"><td>${esc(p.name)}</td><td>${fmt(l.date)}</td><td>${esc(l.test)}</td><td class="${f}">${l.value} ${esc(l.unit||'')} ${arrow(f)}</td></tr>`).join('')}</table>`:'<div class="empty">Không có.</div>'}
+      ${ab.slice(0,40).map(({p,l,f})=>`<tr class="click" onclick="openPatient('${p.id}','labs','${labGroup(l.test)}')"><td>${esc(p.name)}</td><td>${fmt(l.date)}</td><td>${esc(l.test)}</td><td class="${f}">${l.value} ${esc(l.unit||'')} ${arrow(f)}</td></tr>`).join('')}</table>`:'<div class="empty">Không có.</div>'}
   </div>`;
 }
 function listHTML(){
@@ -348,7 +348,7 @@ async function deletePatient(id){
 async function toggleStatus(id){ const p=P(id); p.status=p.status==='closed'?'active':'closed'; touch(p); await commit(); }
 
 /* ---------- Hồ sơ chi tiết ---------- */
-function openPatient(id,tab='info'){ state.open=id; state.tab=tab; state.labTest=null; renderPanel(); $('#panel').hidden=false; $('#panel').scrollTop=0; }
+function openPatient(id,tab='info',sub){ state.open=id; state.tab=tab; if(sub) state.sub[tab]=sub; state.labTest=null; renderPanel(); $('#panel').hidden=false; $('#panel').scrollTop=0; }
 function closePanel(){ state.open=null; $('#panel').hidden=true; render(); }
 function setTab(t){ state.tab=t; renderPanel(); }
 function renderPanel(){
@@ -356,9 +356,9 @@ function renderPanel(){
   const a=age(p.yob);
   const nl=g=>(p.labs||[]).filter(l=>labGroup(l.test)===g).length, ni=m=>(p.imaging||[]).filter(x=>m(x.modality)).length;
   const nc=(p.care||[]).filter(c=>c.status!=='done').length;
-  const T=[['info','Thông tin'],['visits',`Diễn biến (${(p.visits||[]).length})`],['care',`Chăm sóc (${nc})`],['hh',`Huyết học (${nl('hh')})`],['sh',`Sinh hóa (${nl('sh')})`],['vs',`Vi sinh (${(p.micro||[]).length})`],['img',`CĐHA (${ni(m=>m!=='Nội soi'&&m!=='Giải phẫu bệnh')})`],['endo',`Nội soi (${ni(m=>m==='Nội soi')})`],['gpb',`Giải phẫu bệnh (${ni(m=>m==='Giải phẫu bệnh')})`],['meds',`Thuốc (${(p.meds||[]).filter(m=>m.status!=='stopped').length})`],
+  const T=[['info','Thông tin'],['visits',`Diễn biến (${(p.visits||[]).length})`],['labs',`Xét nghiệm (${(p.labs||[]).length+(p.micro||[]).length})`],['imaging',`Chẩn đoán hình ảnh (${(p.imaging||[]).length})`],['care',`Chăm sóc (${nc})`],['meds',`Thuốc (${(p.meds||[]).filter(m=>m.status!=='stopped').length})`],
            ['files',`Tệp (${(p.files||[]).length})`],['tasks',`Việc cần làm (${(p.tasks||[]).filter(k=>!k.done).length})`]];
-  const B={info:infoHTML,visits:visitsHTML,care:careHTML,hh:p=>labsHTML(p,'hh'),sh:p=>labsHTML(p,'sh'),vs:microHTML,img:p=>imagingHTML(p,'img'),endo:p=>imagingHTML(p,'endo'),gpb:p=>imagingHTML(p,'gpb'),meds:medsHTML,files:filesHTML,tasks:tasksHTML}[state.tab](p);
+  const B={info:infoHTML,visits:visitsHTML,care:careHTML,labs:labsView,imaging:imagingView,meds:medsHTML,files:filesHTML,tasks:tasksHTML}[state.tab](p);
   $('#panel').innerHTML=`<div class="phead"><div class="in">
       <button class="ghost" style="padding-left:0" onclick="closePanel()">← Quay lại</button>
       <div style="font-size:18px;font-weight:700">${esc(p.name)}</div>
@@ -419,7 +419,7 @@ async function saveLabs(id){
   const p=P(id); (p.labs||=[]); rs.forEach(r=>p.labs.push({id:uid(),date:d,...r})); touch(p); closeModal(); await commit();
 }
 function labsHTML(p,grp){
-  const labs=(p.labs||[]).filter(l=>labGroup(l.test)===grp), tests=[...new Set(labs.map(l=>l.test))];
+  const labs=(p.labs||[]).filter(l=>grp==='all'||labGroup(l.test)===grp), tests=[...new Set(labs.map(l=>l.test))];
   if(state.labTest&&!tests.includes(state.labTest)) state.labTest=null;
   if(!state.labTest&&tests.length) state.labTest=tests[0];
   const latest=tests.map(t=>{ const arr=labs.filter(l=>l.test===t).sort((a,b)=>a.date.localeCompare(b.date)); return {t,arr,last:arr[arr.length-1]}; });
@@ -460,8 +460,8 @@ function chartSVG(pts,lo,hi){
 const IF=[{k:'date',label:'Ngày',type:'date',req:true,half:true},{k:'modality',label:'Loại',type:'select',opts:Object.fromEntries(MODALITY.map(m=>[m,m])),half:true},
   {k:'region',label:'Vùng / bộ phận',half:true},{k:'acc',label:'Mã chụp (tra lại trên PACS)',half:true},{k:'result',label:'Kết luận',type:'textarea',req:true},{k:'link',label:'Đường dẫn xem ảnh (tùy chọn, dán hoặc đọc từ QR)',ph:'https://…'}];
 const safeUrl = u => (/^https?:\/\//i.test(String(u||'').trim()) ? String(u).trim() : '');
-const IMG_GRP=g=>x=>g==='endo'?x.modality==='Nội soi':g==='gpb'?x.modality==='Giải phẫu bệnh':(x.modality!=='Nội soi'&&x.modality!=='Giải phẫu bệnh');
-const IMG_DEF={img:'Siêu âm',endo:'Nội soi',gpb:'Giải phẫu bệnh'};
+const IMG_GRP=g=>x=>g==='all'?true:g==='endo'?x.modality==='Nội soi':g==='gpb'?x.modality==='Giải phẫu bệnh':(x.modality!=='Nội soi'&&x.modality!=='Giải phẫu bệnh');
+const IMG_DEF={all:'Siêu âm',img:'Siêu âm',endo:'Nội soi',gpb:'Giải phẫu bệnh'};
 function imagingHTML(p,grp){
   const v=[...(p.imaging||[])].filter(IMG_GRP(grp)).sort((a,b)=>b.date.localeCompare(a.date));
   return `<div style="margin-bottom:10px">${uploadBtn(p.id)}</div>
@@ -576,10 +576,31 @@ const CARE_F=[{k:'due',label:'Ngày cần chăm sóc',type:'date',req:true,half:
 const RESP_F=[{k:'result',label:'Kết quả liên hệ',type:'select',opts:{ok:'Ổn, không có triệu chứng mới',sick:'Có triệu chứng mới cần xử trí',noans:'Không liên lạc được'}},
   {k:'response',label:'Ghi chú phản hồi của bệnh nhân',type:'textarea'}];
 const RESULT_TXT={ok:'Ổn',sick:'Có triệu chứng mới',noans:'Không liên lạc được'};
+function subBar(tab, opts, counts){
+  const cur=state.sub[tab];
+  return `<div class="row" style="margin-bottom:10px;flex-wrap:wrap">${opts.map(([k,l])=>`<button class="sm ${cur===k?'pri':''}" onclick="setSub('${tab}','${k}')">${l} (${counts[k]})</button>`).join('')}</div>`;
+}
+function setSub(tab,k){ state.sub[tab]=k; renderPanel(); }
+function labsView(p){
+  const cur=state.sub.labs, n=(p.labs||[]);
+  const hh=n.filter(l=>labGroup(l.test)==='hh').length, sh=n.length-hh, vs=(p.micro||[]).length;
+  const bar=subBar('labs',[['all','Tất cả'],['hh','Huyết học'],['sh','Sinh hóa'],['vs','Vi sinh']],{all:n.length+vs,hh,sh,vs});
+  if(cur==='vs') return bar+microHTML(p);
+  return bar+labsHTML(p, cur)+(cur==='all'?microHTML(p):'');
+}
+function imagingView(p){
+  const cur=state.sub.imaging, n=p.imaging||[];
+  const c=g=>n.filter(IMG_GRP(g)).length;
+  const bar=subBar('imaging',[['all','Tất cả'],['img','X-quang, siêu âm, CT, MRI'],['endo','Nội soi'],['gpb','Giải phẫu bệnh']],{all:n.length,img:c('img'),endo:c('endo'),gpb:c('gpb')});
+  return bar+imagingHTML(p,cur);
+}
 function careHTML(p){
-  const items=[...(p.care||[])].sort((a,b)=>(a.status==='done')-(b.status==='done')||a.due.localeCompare(b.due));
-  const td=today();
-  return `<div class="row" style="margin-bottom:10px"><button class="pri" onclick="addCare('${p.id}')">＋ Thêm lịch chăm sóc</button></div>
+  const td=today(), f=state.sub.care, all=[...(p.care||[])];
+  const counts={open:all.filter(c=>c.status!=='done').length, late:all.filter(c=>c.status!=='done'&&c.due<td).length, done:all.filter(c=>c.status==='done').length, all:all.length};
+  const bar=subBar('care',[['open','Đang mở'],['late','Quá hạn'],['done','Đã xong'],['all','Tất cả']],counts);
+  const items=all.filter(c=> f==='all'||(f==='open'&&c.status!=='done')||(f==='done'&&c.status==='done')||(f==='late'&&c.status!=='done'&&c.due<td))
+    .sort((a,b)=>(a.status==='done')-(b.status==='done')||a.due.localeCompare(b.due));
+  return bar+`<div class="row" style="margin-bottom:10px"><button class="pri" onclick="addCare('${p.id}')">＋ Thêm lịch chăm sóc</button></div>
   <div class="card">${items.length?items.map(c=>{
     if(c.status==='done') return `<div class="item"><div class="grow"><div><b>${fmt(c.due)}</b> <span class="badge">${esc(CARE_TYPES[c.type]||'')}</span> <span class="mut">đã liên hệ ${fmt(c.doneDate)}</span></div>
       <div class="${c.result==='ok'?'':'bad'}"><b>${esc(RESULT_TXT[c.result]||'')}</b>${c.response?` · ${esc(c.response)}`:''}</div>
@@ -962,8 +983,10 @@ async function saveReview(){
   if(R.kind==='img'){ (p.imaging||=[]).push({id:uid(),date:R.date,...R.img,fileId:fid}); }
   if(R.kind==='vs'){ (p.micro||=[]).push({id:uid(),date:R.date,text:vsText,fileId:fid}); }
   touch(p); pending=null; closeModal(); await save();
-  const tabOf=R.kind==='lab'?(labs.some(L=>labGroup(L.test)==='hh')?'hh':'sh'):R.kind==='img'?'img':R.kind==='vs'?'vs':R.kind==='info'?'info':'files';
-  openPatient(p.id, tabOf);
+  if(R.kind==='lab') openPatient(p.id,'labs',labs.some(L=>labGroup(L.test)==='hh')?'hh':'sh');
+  else if(R.kind==='vs') openPatient(p.id,'labs','vs');
+  else if(R.kind==='img') openPatient(p.id,'imaging','img');
+  else openPatient(p.id, R.kind==='info'?'info':'files');
 }
 
 /* ============================================================
