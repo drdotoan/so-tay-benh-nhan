@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function role() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function isStaff()  { return signedIn() && role() in ['staff', 'admin']; }
+    function canRead()  { return signedIn() && role() in ['staff', 'leader', 'admin']; }
+    function isAdmin()  { return signedIn() && role() == 'admin'; }
+
+    // Mỗi người tự tạo hồ sơ của mình với quyền 'pending'; chỉ admin đổi quyền.
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.role == 'pending';
+      allow update, delete: if isAdmin();
+    }
+
+    // Dữ liệu khoa: nhân viên/admin ghi, lãnh đạo chỉ xem.
+    match /items/{id}      { allow read: if canRead(); allow write: if isStaff(); }
+    match /loans/{id}      { allow read: if canRead(); allow write: if isStaff(); }
+    match /handovers/{id}  { allow read: if canRead(); allow write: if isStaff(); }
+    match /log/{id}        { allow read: if canRead(); allow create: if isStaff(); }
+  }
+}
