@@ -139,8 +139,8 @@ auth.onAuthStateChanged(async u=>{
 function startApp(){
   document.getElementById('gate').style.display='none';
   document.getElementById('app').style.display='block';
-  document.getElementById('logout').style.display='inline-block';
-  document.getElementById('who').textContent=DEMO?'DÙNG THỬ · dữ liệu chỉ lưu trên máy này':`${me.name} · ${ROLE_NAME[role]}${canWrite()?'':' (chỉ xem)'}`;
+  document.getElementById('logout').style.display=DEMO?'none':'inline-block';
+  document.getElementById('who').textContent=DEMO?'Chế độ dùng thử · chưa bật đăng nhập · dữ liệu chỉ lưu trên máy này':`${me.name} · ${ROLE_NAME[role]}${canWrite()?'':' (chỉ xem)'}`;
   if(role==='leader') tab='dash';
   db.collection('items').onSnapshot(s=>{
     items=s.docs.map(d=>({id:d.id,...d.data()}));
