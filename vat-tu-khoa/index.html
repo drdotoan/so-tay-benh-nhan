@@ -359,30 +359,35 @@ const CATS={drug:'Thuốc',sup:'Vật tư',mt:'Máy thở'};
 const catOf=it=>it.kind==='drug'?'Thuốc':it.kind==='sup'?'Vật tư':it.group==='Máy thở'?'Máy thở':'Máy khác';
 const inCat=(x,c)=>c==='mt'?(x.kind==='equip'&&x.group==='Máy thở'):c==='drug'?x.kind==='drug':c==='sup'?x.kind==='sup':false;
 const csvCell=v=>`"${String(v??'').replace(/"/g,'""')}"`;
-const HAND_COLS=['Thực nhận / Tổng','Đã dùng / Đang dùng','Hỏng','Thiếu','Cho mượn','Mượn','Trống'];
+const HAND_COLS={other:['Cơ số','Nhận','Dùng','Thiếu'],mt:['Tổng','Đang dùng','Hỏng','Cho mượn','Mượn','Trống']};
+const CORD=c=>['Thuốc','Vật tư','Máy thở','Máy khác'].indexOf(c);
+const handCols=it=>catOf(it)==='Máy thở'?HAND_COLS.mt:HAND_COLS.other;
+function handRowVals(it){
+  return catOf(it)==='Máy thở'?[it.qty??'',it.inUse??'',it.broken??'',it.out||'',it.in||'',it.free??'']
+                              :[it.std??'',it.qty??'',it.used??'',it.short||''];
+}
 const nowDT=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;};
 const tgOf=h=>h.tgBG||h.tgGiao||'';
 const fmtDT=s=>{if(!s) return '';const [dt,tm]=s.split('T');return `${tm||''} ${dt.split('-').reverse().join('/')}`;};
-function handRowVals(it){
-  return it.kind==='equip'?[it.qty??'',it.inUse??'',it.broken??'','',it.out||'',it.in||'',it.free??'']
-                          :[it.qty??'',it.used??'','',it.short||'',it.out||'',it.in||'',''];
-}
 function handHTML(){
   const d=hdate||today();
   const list=handovers.filter(h=>tgOf(h).slice(0,10)===d).sort((a,b)=>tgOf(a)<tgOf(b)?-1:1);
   const ctl=`<div class="row" style="margin-bottom:8px"><input type="date" value="${d}" style="width:auto" onchange="hdate=this.value;render()">
     <div>${canWrite()?'<button class="btn" onclick="openHand()">+ Ghi bàn giao</button> ':''}<button class="ghost" onclick="exportHand()">Xuất CSV</button></div></div>`;
   const cards=list.map(h=>{
-    const its=[...(h.items||[])].sort((a,b)=>catOf(a).localeCompare(catOf(b),'vi')||a.name.localeCompare(b.name,'vi'));
-    let cur='', rows='';
-    for(const it of its){
-      const c=catOf(it); if(c!==cur){ cur=c; rows+=`<tr><td colspan="9" style="background:#eef3f8;font-weight:600;text-align:left">${c}</td></tr>`; }
-      const v=handRowVals(it); rows+=`<tr><td>${esc(it.name)}</td><td>${it.std??''}</td>${v.map((x,i)=>`<td class="${i===3&&x?'bad':''}">${esc(x)}</td>`).join('')}</tr>`;
+    const its=[...(h.items||[])].sort((a,b)=>CORD(catOf(a))-CORD(catOf(b))||a.name.localeCompare(b.name,'vi'));
+    const groups={}; for(const it of its) (groups[catOf(it)]=groups[catOf(it)]||[]).push(it);
+    let tables='';
+    for(const c of Object.keys(groups)){
+      const cols=handCols(groups[c][0]);
+      const rows=groups[c].map(it=>{ const v=handRowVals(it); const bi=cols.indexOf('Thiếu');
+        return `<tr><td>${esc(it.name)}</td>${v.map((x,i)=>`<td class="${i===bi&&x?'bad':''}">${esc(x)}</td>`).join('')}</tr>`; }).join('');
+      tables+=`<h4 style="margin:10px 0 4px">${c}</h4><div style="overflow-x:auto"><table class="tb"><tr class="muted"><td>Tên</td>${cols.map(x=>`<td>${x}</td>`).join('')}</tr>${rows}</table></div>`;
     }
     const chips=(h.cats||[]).map(c=>`<span class="tag">${CATS[c]||c}</span>`).join(' ');
     return `<details class="card" ${list.length===1?'open':''}><summary>${chips} ${fmtDT(tgOf(h))} · giao <b>${esc(h.giao||'—')}</b> → nhận <b>${esc(h.nhan||'—')}</b></summary>
       ${h.note?`<p class="muted">${esc(h.note)}</p>`:''}<div class="muted">Ghi bởi ${esc(h.by||'')}</div>
-      <div style="overflow-x:auto"><table class="tb"><tr class="muted"><td>Tên</td><td>Cơ số</td>${HAND_COLS.map(c=>`<td>${c}</td>`).join('')}</tr>${rows}</table></div></details>`;
+      ${tables}</details>`;
   }).join('');
   return ctl+(cards||`<p class="muted">Chưa có bàn giao cho ngày ${fmtDT(d+'T').replace(/ $/,'')}.</p>`);
 }
@@ -418,11 +423,18 @@ async function saveHand(){
 function handCsv(d){
   const list=handovers.filter(h=>tgOf(h).slice(0,10)===d).sort((a,b)=>tgOf(a)<tgOf(b)?-1:1);
   if(!list.length) return null;
-  const head=['Ngày bàn giao','Giờ bàn giao','Người giao','Người nhận','Ghi chú','Loại','Tên','Đơn vị','Cơ số',...HAND_COLS];
-  const lines=[head.map(csvCell).join(',')];
-  for(const h of list) for(const it of h.items||[])
-    lines.push([tgOf(h).slice(0,10),tgOf(h).slice(11),h.giao,h.nhan,h.note,catOf(it),it.name,it.unit,it.std??'',...handRowVals(it)].map(csvCell).join(','));
-  return lines.join('\r\n');
+  const L=[], row=a=>L.push(a.map(csvCell).join(','));
+  list.forEach((h,n)=>{
+    if(n) L.push('');
+    row(['BÀN GIAO',tgOf(h).slice(0,10),tgOf(h).slice(11),'Người giao',h.giao,'Người nhận',h.nhan,'Ghi chú',h.note]);
+    const its=[...(h.items||[])].sort((a,b)=>CORD(catOf(a))-CORD(catOf(b))||a.name.localeCompare(b.name,'vi'));
+    const groups={}; for(const it of its) (groups[catOf(it)]=groups[catOf(it)]||[]).push(it);
+    for(const c of Object.keys(groups)){
+      row([c.toUpperCase()]); row(['Tên','Đơn vị',...handCols(groups[c][0])]);
+      for(const it of groups[c]) row([it.name,it.unit,...handRowVals(it)]);
+    }
+  });
+  return L.join('\r\n');
 }
 function exportHand(){
   const d=hdate||today(), text=handCsv(d);
