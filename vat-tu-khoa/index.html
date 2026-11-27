@@ -117,6 +117,11 @@ const loanSum=(id,dir)=>openLoans().filter(l=>l.itemId===id&&l.dir===dir).reduce
 const short=x=>(x.kind==='equip'||num(x.std)===null||num(x.qty)===null)?0:Math.max(0,x.std+loanSum(x.id,'in')-x.qty-(num(x.used)||0)-loanSum(x.id,'out'));
 const expSoon=x=>x.kind==='drug'&&x.expiry&&days(x.expiry)<=60;
 const free=x=>(num(x.qty)||0)+loanSum(x.id,'in')-loanSum(x.id,'out')-(num(x.inUse)||0)-(num(x.broken)||0);
+const isVent=x=>x.kind==='equip'&&x.group==='Máy thở'&&!/HFNC|bơm tiêm điện/i.test(x.name||'');
+const ventStat=(src)=>{ const v=(src||items).filter(isVent); const f=y=>(src?(num(y.free)??0):free(y));
+  return {free:v.reduce((a,x)=>a+f(x),0),total:v.reduce((a,x)=>a+(num(x.qty)||0),0),inUse:v.reduce((a,x)=>a+(num(x.inUse)||0),0),broken:v.reduce((a,x)=>a+(num(x.broken)||0),0)}; };
+const ventBanner=()=>{ const t=ventStat(); return `<div class="card" style="border-left:5px solid ${t.free>0?'#2e7d32':'#c62828'};margin-bottom:8px"><b style="font-size:22px">${t.free}</b> máy thở còn lại
+    <div class="muted">Tổng ${t.total} · đang dùng ${t.inUse} · hỏng ${t.broken} · không tính HFNC và bơm tiêm điện</div></div>`; };
 const attention=x=>short(x)>0||expSoon(x)||(x.kind==='equip'&&(num(x.broken)||0)>0);
 const pname=l=>esc(lname(l));
 
@@ -193,7 +198,7 @@ function listHTML(k){
                 .sort((a,b)=>a.name.localeCompare(b.name,'vi'));
   const hint=k==='mt'?'Bấm tên máy để ghi mượn hoặc cho mượn.':k==='equip'?'Gõ trực tiếp số tổng và số hỏng.':'Gõ trực tiếp cột Nhận và Dùng. Thiếu = Cơ số − Nhận − Dùng.';
   return `<div class="row" style="margin-bottom:8px"><div>${chips}</div>${canWrite()?addBtn(k):''}</div>
-    ${canWrite()?`<div class="muted" style="margin-bottom:6px">${hint}</div>`:''}
+    ${k==='mt'?ventBanner():''}${canWrite()?`<div class="muted" style="margin-bottom:6px">${hint}</div>`:''}
     ${list.length?hdr(k)+list.map(rowHTML).join(''):(seedBtn()||'<p class="muted">Không có mục nào.</p>')}`;
 }
 
@@ -214,14 +219,14 @@ function numIn(x,field,label){
 const cellIn=(x,f,l)=>canWrite()?`<label class="cell"><span class="lb2">${l}</span><input class="c" type="number" inputmode="numeric" min="0" value="${x[f]??''}" placeholder="–" onchange="setField('${x.id}','${f}',this.value)"></label>`:`<div class="cell"><span class="lb2">${l}</span><b class="cc">${x[f]??'–'}</b></div>`;
 const plain=(l,v,c='')=>`<div class="cell"><span class="lb2">${l}</span><b class="cc ${c}">${v}</b></div>`;
 const loanCell=(x,dir,l)=>{const n=loanSum(x.id,dir);return `<div class="cell"><span class="lb2">${l}</span><button class="c lb ${n?'has':''}" onclick="openItem('${x.id}')">${n||'–'}</button></div>`;};
-const HDR={mt:['Tổng','Đang dùng','Hỏng','Cho mượn','Mượn','Trống'],equip:['Tổng','Hỏng'],other:['Cơ số','Nhận','Dùng','Thiếu']};
+const HDR={mt:['Tổng','Đang dùng','Hỏng','Cho mượn','Mượn','Còn lại'],equip:['Tổng','Hỏng'],other:['Cơ số','Nhận','Dùng','Thiếu']};
 const hdr=k=>{const h=HDR[k==='mt'||k==='equip'?k:'other'];return `<div class="g4 hdr" style="--n:${h.length}"><div>Tên</div>${h.map(x=>`<div>${x}</div>`).join('')}</div>`;};
 function rowHTML(x){
   const ex=expSoon(x)?` <span class="${days(x.expiry)<0?'bad':'warn'}" style="font-size:12px">${days(x.expiry)<0?'Hết hạn':'HSD '+days(x.expiry)+'n'}</span>`:'';
   const loans=openLoans().filter(l=>l.itemId===x.id).map(l=>` <span class="tag">${l.dir==='out'?'Cho':'Mượn của'} ${esc(lname(l))}: ${esc(l.qty)}</span>`).join('');
   const name=`<div class="nm" onclick="openItem('${x.id}')"><b>${esc(x.name)}</b> <span class="muted">${esc(x.unit||'')}</span>${ex}${loans}</div>`;
   if(x.kind==='equip'&&x.loanable){ const fr=free(x);
-    return `<div class="item g4" style="--n:6">${name}${cellIn(x,'qty','Tổng')}${cellIn(x,'inUse','Đang dùng')}${cellIn(x,'broken','Hỏng')}${loanCell(x,'out','Cho mượn')}${loanCell(x,'in','Mượn')}${plain('Trống',fr,fr<0?'bad':'')}</div>`; }
+    return `<div class="item g4" style="--n:6">${name}${cellIn(x,'qty','Tổng')}${cellIn(x,'inUse','Đang dùng')}${cellIn(x,'broken','Hỏng')}${loanCell(x,'out','Cho mượn')}${loanCell(x,'in','Mượn')}${plain('Còn lại',fr,fr<0?'bad':'')}</div>`; }
   if(x.kind==='equip'){
     return `<div class="item g4" style="--n:2">${name}${cellIn(x,'qty','Tổng')}${cellIn(x,'broken','Hỏng')}</div>`; }
   const sh=short(x);
@@ -237,13 +242,13 @@ function dashHTML(){
   const restH=rest.map(x=>`<div class="card row"><span>${esc(x.name)} <span class="muted">(${KIND[x.kind]})</span></span><span class="warn">đã dùng ${x.used} ${esc(x.unit||'')}</span></div>`).join('');
   const expH=exp.map(x=>`<div class="card row"><span>${esc(x.name)}</span><span class="${days(x.expiry)<0?'bad':'warn'}">HSD ${esc(x.expiry)}</span></div>`).join('');
   const mtL=items.filter(x=>x.kind==='equip'&&x.group==='Máy thở'), ohL=items.filter(x=>x.kind==='equip'&&x.group!=='Máy thở');
-  const mtH=mtL.length?`<div class="card"><table class="tb"><tr class="muted"><td>Máy</td><td>Tổng</td><td>Dùng</td><td>Hỏng</td><td>Trống</td></tr>${mtL.map(x=>`<tr><td>${esc(x.name)}</td><td>${num(x.qty)??'—'}</td><td>${num(x.inUse)||0}</td><td class="${num(x.broken)?'bad':''}">${num(x.broken)||0}</td><td>${free(x)}</td></tr>`).join('')}</table></div>`:'';
+  const mtH=mtL.length?`<div class="card"><table class="tb"><tr class="muted"><td>Máy</td><td>Tổng</td><td>Dùng</td><td>Hỏng</td><td>Còn lại</td></tr>${mtL.map(x=>`<tr><td>${esc(x.name)}</td><td>${num(x.qty)??'—'}</td><td>${num(x.inUse)||0}</td><td class="${num(x.broken)?'bad':''}">${num(x.broken)||0}</td><td>${free(x)}</td></tr>`).join('')}</table></div>`:'';
   const ohH=ohL.length?`<div class="card"><table class="tb"><tr class="muted"><td>Máy</td><td>Tổng</td><td>Hỏng</td></tr>${ohL.map(x=>`<tr><td>${esc(x.name)}</td><td>${num(x.qty)??'—'}</td><td class="${num(x.broken)?'bad':''}">${num(x.broken)||0}</td></tr>`).join('')}</table></div>`:'';
   const loanH=ol.map(l=>`<div class="card row"><div><b>${esc(l.itemName)}</b> · SL ${esc(l.qty)}<div class="muted">${l.dir==='out'?'Cho':'Mượn của'} ${pname(l)} · ${esc(l.date)}</div></div>${canWrite()?`<button class="ghost" onclick="returnLoan('${l.id}')">Đã trả</button>`:''}</div>`).join('');
   const logH=logs.slice(0,15).map(l=>`<div class="muted" style="padding:3px 0">${fmt(l.at)} · <b>${esc(l.itemName)}</b> — ${esc(l.text)} (${esc(l.by)})</div>`).join('');
   return `<div class="stats">${tile(need.length,'Thiếu','bad')}${tile(rest.length,'Cần lĩnh bù','warn')}${tile(exp.length,'Thuốc sắp / đã hết hạn','warn')}${tile(sum('broken'),'Máy hỏng / bảo trì','bad')}${tile(ol.length,'Đang cho / mượn')}</div>
     <p class="muted">Cập nhật tự động theo thời gian thực.</p>
-    ${seedBtn()}${sec('Thiếu (cần tìm lại)',needH)}${sec('Cần lĩnh bù',restH)}${sec('Thuốc sắp hết hạn (≤ 60 ngày)',expH)}${sec(MTL,mtH)}${sec('Máy khác',ohH)}${sec('Đang cho / mượn',loanH)}${sec('Hoạt động gần đây',logH)}`;
+    ${seedBtn()}${sec('Thiếu (cần tìm lại)',needH)}${sec('Cần lĩnh bù',restH)}${sec('Thuốc sắp hết hạn (≤ 60 ngày)',expH)}${sec(MTL,ventBanner()+mtH)}${sec('Máy khác',ohH)}${sec('Đang cho / mượn',loanH)}${sec('Hoạt động gần đây',logH)}`;
 }
 
 /* ---- Thao tác ---- */
@@ -369,7 +374,7 @@ const CATS={drug:'Thuốc',sup:'Vật tư',mt:MTL};
 const catOf=it=>it.kind==='drug'?'Thuốc':it.kind==='sup'?'Vật tư':it.group==='Máy thở'?'Máy thở':'Máy khác';
 const inCat=(x,c)=>c==='mt'?(x.kind==='equip'&&x.group==='Máy thở'):c==='drug'?x.kind==='drug':c==='sup'?x.kind==='sup':false;
 const csvCell=v=>`"${String(v??'').replace(/"/g,'""')}"`;
-const HAND_COLS={other:['Cơ số','Nhận','Dùng','Thiếu'],mt:['Tổng','Đang dùng','Hỏng','Cho mượn','Mượn','Trống']};
+const HAND_COLS={other:['Cơ số','Nhận','Dùng','Thiếu'],mt:['Tổng','Đang dùng','Hỏng','Cho mượn','Mượn','Còn lại']};
 const CORD=c=>['Thuốc','Vật tư','Máy thở','Máy khác'].indexOf(c);
 const handCols=it=>catOf(it)==='Máy thở'?HAND_COLS.mt:HAND_COLS.other;
 function handRowVals(it){
@@ -390,7 +395,7 @@ function handHTML(){
       const cols=handCols(groups[c][0]);
       const rows=groups[c].map(it=>{ const v=handRowVals(it); const bi=cols.indexOf('Thiếu');
         return `<tr><td>${esc(it.name)}</td>${v.map((x,i)=>`<td class="${i===bi&&x?'bad':''}">${esc(x)}</td>`).join('')}</tr>`; }).join('');
-      tables+=`<h4 style="margin:10px 0 4px">${catLabel(c)}</h4><div style="overflow-x:auto"><table class="tb"><tr class="muted"><td>Tên</td>${cols.map(x=>`<td>${x}</td>`).join('')}</tr>${rows}</table></div>`;
+      tables+=`<h4 style="margin:10px 0 4px">${catLabel(c)}</h4><div style="overflow-x:auto"><table class="tb"><tr class="muted"><td>Tên</td>${cols.map(x=>`<td>${x}</td>`).join('')}</tr>${rows}</table></div>${c==='Máy thở'?`<div class="muted" style="margin-top:4px">Máy thở còn lại (không tính HFNC, bơm tiêm điện): <b>${ventStat(groups[c]).free}</b></div>`:''}`;
     }
     const chips=(h.cats||[]).map(c=>`<span class="tag">${CATS[c]||c}</span>`).join(' ');
     return `<details class="card" ${list.length===1?'open':''}><summary>${chips} ${fmtDT(tgOf(h))} · giao <b>${esc(h.giao||'—')}</b> → nhận <b>${esc(h.nhan||'—')}</b></summary>
@@ -417,14 +422,14 @@ async function saveHand(){
   const tgBG=v('h_tg')||nowDT();
   /* Kết nối Drive ngay trong lúc bấm (lần đầu Google hỏi quyền); lỗi Drive không chặn việc ghi bàn giao */
   let driveErr=null;
-  if(!DEMO&&!gTok){ try{ await driveConnect(); }catch(e){ driveErr=e; } }
+  if(!DEMO&&!DRIVE_HOOK&&!gTok){ try{ await driveConnect(); }catch(e){ driveErr=e; } }
   await db.collection('handovers').add({date:tgBG.slice(0,10),cats,giao:v('h_giao'),nhan:v('h_nhan'),tgBG,note:v('h_note'),by:me.name,at:serverTs(),items:snap});
   await addLog({id:'',name:'Bàn giao',kind:'hand'},`${v('h_giao')||'—'} → ${v('h_nhan')||'—'} (${fmtDT(tgBG)}), ${snap.length} mục`);
   hdate=tgBG.slice(0,10); closeDlg();
   /* Sang tua mới: tua giao bổ sung đủ phần thiếu nên Nhận quay về Cơ số, Dùng về trống */
   for(const x of items){ if(x.kind==='equip') continue; const std=num(x.std); if(std===null&&num(x.used)===null) continue;
     try{ await db.collection('items').doc(x.id).update({qty:std===null?x.qty:std,used:null,updatedBy:me.name,updatedAt:serverTs()}); }catch(e){} }
-  if(gTok){
+  if(gTok||(DRIVE_HOOK&&!DEMO)){
     setTimeout(async()=>{ try{ const t=handCsv(hdate); if(t) await driveSaveCsv(`ban-giao-${hdate}.csv`,t); }catch(e){ alert('Đã ghi bàn giao nhưng chưa lưu được lên Drive: '+e.message); } },1500);
   } else if(driveErr&&!DEMO) alert('Đã ghi bàn giao. Chưa lưu được lên Drive: '+driveErr.message);
 }
@@ -440,6 +445,7 @@ function handCsv(d){
     for(const c of Object.keys(groups)){
       row([catLabel(c).toUpperCase()]); row(['Tên','Đơn vị',...handCols(groups[c][0])]);
       for(const it of groups[c]) row([it.name,it.unit,...handRowVals(it)]);
+      if(c==='Máy thở'){ const t=ventStat(groups[c]); row(['Máy thở còn lại (không tính HFNC, bơm tiêm điện)','',t.free]); }
     }
   });
   return L.join('\r\n');
@@ -454,6 +460,8 @@ function exportHand(){
 /* ---- Google Drive: lưu CSV theo ngày vào thư mục "Bàn giao khoa" ---- */
 const GCID='771542294462-425rbdnal1qj9uloqohd8dlm8ohmq4ke.apps.googleusercontent.com';
 const DRIVE_FOLDER='Bàn giao khoa';
+/* Nếu điền DRIVE_HOOK (địa chỉ Google Apps Script của chủ khoa), mọi người bấm bàn giao đều lưu file vào Drive của chủ khoa, không cần tự đăng nhập Drive. */
+const DRIVE_HOOK='', DRIVE_KEY='';
 let gTok=null, gFolder=null;
 function driveConnect(){
   return new Promise((res,rej)=>{
@@ -481,6 +489,7 @@ async function driveFolderId(){
   return gFolder=c.id;
 }
 async function driveSaveCsv(name,text){
+  if(DRIVE_HOOK){ await fetch(DRIVE_HOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({key:DRIVE_KEY,name,csv:'\ufeff'+text})}); return; }
   const folder=await driveFolderId();
   const q=encodeURIComponent(`name='${name}' and '${folder}' in parents and trashed=false`);
   const j=await (await gfetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`)).json();
