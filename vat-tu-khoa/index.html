@@ -397,7 +397,7 @@ function openHand(){
     <div><label>Người nhận</label><input id="h_nhan"></div>
     <div class="full"><label>Thời gian bàn giao</label><input type="datetime-local" id="h_tg" value="${nowDT()}"></div>
     <div class="full"><label>Ghi chú (không bắt buộc)</label><input id="h_note"></div></div>
-    <p class="muted">Lưu toàn bộ thuốc, vật tư, máy thở như hiện tại (không sửa được sau đó), gửi file lên Drive, rồi bắt đầu tua mới: cột <b>Dùng</b> về trống. Số <b>Nhận</b>, mượn/cho mượn đang mở được giữ nguyên.</p>
+    <p class="muted">Lưu toàn bộ thuốc, vật tư, máy thở như hiện tại (không sửa được sau đó), gửi file lên Drive, rồi bắt đầu tua mới: tua giao bổ sung đủ phần thiếu nên <b>Nhận</b> quay về <b>Cơ số</b>, <b>Dùng</b> về trống. Mượn/cho mượn đang mở và tình trạng máy giữ nguyên.</p>
     <div class="row" style="margin-top:12px"><span></span><div><button class="ghost" onclick="closeDlg()">Hủy</button> <button class="btn" onclick="saveHand()">Bàn giao và sang tua mới</button></div></div>`);
 }
 async function saveHand(){
@@ -412,7 +412,9 @@ async function saveHand(){
   await db.collection('handovers').add({date:tgBG.slice(0,10),cats,giao:v('h_giao'),nhan:v('h_nhan'),tgBG,note:v('h_note'),by:me.name,at:serverTs(),items:snap});
   await addLog({id:'',name:'Bàn giao',kind:'hand'},`${v('h_giao')||'—'} → ${v('h_nhan')||'—'} (${fmtDT(tgBG)}), ${snap.length} mục`);
   hdate=tgBG.slice(0,10); closeDlg();
-  for(const x of items){ if(x.kind!=='equip'&&num(x.used)!==null){ try{ await db.collection('items').doc(x.id).update({used:null,updatedBy:me.name,updatedAt:serverTs()}); }catch(e){} } }
+  /* Sang tua mới: tua giao bổ sung đủ phần thiếu nên Nhận quay về Cơ số, Dùng về trống */
+  for(const x of items){ if(x.kind==='equip') continue; const std=num(x.std); if(std===null&&num(x.used)===null) continue;
+    try{ await db.collection('items').doc(x.id).update({qty:std===null?x.qty:std,used:null,updatedBy:me.name,updatedAt:serverTs()}); }catch(e){} }
   if(gTok){
     setTimeout(async()=>{ try{ const t=handCsv(hdate); if(t) await driveSaveCsv(`ban-giao-${hdate}.csv`,t); }catch(e){ alert('Đã ghi bàn giao nhưng chưa lưu được lên Drive: '+e.message); } },1500);
   } else if(driveErr&&!DEMO) alert('Đã ghi bàn giao. Chưa lưu được lên Drive: '+driveErr.message);
