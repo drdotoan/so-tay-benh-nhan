@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vật tư & Máy móc khoa</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:0;background:#f4f6f8;color:#222}
+header{background:#1f5f8b;color:#fff;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+nav{display:flex;gap:6px;padding:8px 12px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:2}
+nav button{flex:1;border:1px solid #1f5f8b;background:#fff;color:#1f5f8b;padding:9px 4px;border-radius:8px;cursor:pointer;font-size:15px}
+nav button.on{background:#1f5f8b;color:#fff}
+.fbtn{border:1px solid #1f5f8b;background:#fff;color:#1f5f8b;padding:5px 10px;border-radius:14px;cursor:pointer;font-size:13px;margin:0 2px 4px 0}
+.fbtn.on{background:#1f5f8b;color:#fff}
+main{padding:10px 12px;max-width:820px;margin:auto}
+.card{background:#fff;border-radius:8px;padding:8px 10px;margin-bottom:6px;box-shadow:0 1px 2px #0001}
+.item{background:#fff;border-radius:8px;padding:8px 10px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;gap:8px;box-shadow:0 1px 2px #0001}
+.nm{flex:1;min-width:0;cursor:pointer}.sub{font-size:12px;margin-top:2px}
+.nums{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.nb{display:flex;flex-direction:column;align-items:center;font-size:11px;color:#666}
+.nb input{width:62px;text-align:center;padding:6px 2px;font-size:16px}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.bad{color:#b00020;font-weight:600}.warn{color:#b26a00;font-weight:600}.muted{color:#666;font-size:13px}
+.tag{background:#e8f0f7;color:#1f5f8b;border-radius:10px;padding:1px 7px;font-size:12px}
+.btn{border:0;background:#1f5f8b;color:#fff;padding:8px 13px;border-radius:6px;cursor:pointer;font-size:14px}
+.ghost{border:1px solid #999;background:#fff;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:14px}
+input,select{padding:7px;border:1px solid #bbb;border-radius:6px;font-size:15px;width:100%;box-sizing:border-box}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:8px}.form label{font-size:13px;color:#555;display:block}.full{grid-column:1/-1}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.stat{text-align:center;margin:0}.stat b{font-size:26px;display:block}
+.tb{width:100%;border-collapse:collapse}.tb td{padding:4px 6px;border-bottom:1px solid #eee;text-align:center}.tb td:first-child{text-align:left}
+#dlg{position:fixed;inset:0;background:#0006;display:none;align-items:center;justify-content:center;padding:12px;z-index:5}
+#dlg>div{background:#fff;border-radius:10px;padding:14px;max-width:520px;width:100%;max-height:90vh;overflow:auto}
+h3{margin:14px 0 6px;font-size:16px}
+.g4{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--n,4),64px);gap:4px;align-items:center}
+.item.g4{background:#fff;border-radius:8px;padding:8px 10px;margin-bottom:5px;box-shadow:0 1px 2px #0001}
+.hdr.g4{font-size:12px;color:#666;text-align:center;padding:0 10px;margin-bottom:2px}
+.hdr.g4 div:first-child{text-align:left}
+.lb2{display:none}
+.cell{text-align:center}
+.item .nm{cursor:pointer;min-width:0;word-break:break-word}
+.item .nm b{font-size:15px}
+input.c{width:100%;padding:8px 0;text-align:center;font-size:16px;box-sizing:border-box}
+.cc{font-size:16px}
+@media(max-width:560px){
+  main{padding:8px 6px}
+  .g4{grid-template-columns:repeat(var(--n,4),minmax(0,1fr))}
+  .item.g4 .nm{grid-column:1/-1}
+  .hdr.g4{display:none}
+  .lb2{display:block;font-size:11px;color:#666}
+}
+</style></head><body>
+<header><div><b>Vật tư &amp; Máy móc khoa</b><div id="who" class="muted" style="color:#dfe"></div></div>
+<button class="ghost" id="logout" style="display:none" onclick="auth.signOut()">Đăng xuất</button></header>
+<div id="gate" style="padding:30px;text-align:center;display:none"></div>
+<div id="app" style="display:none"><nav id="tabs"></nav><main id="main"></main></div>
+<div id="dlg"><div id="dlgbody"></div></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="void 0"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="void 0"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="void 0"></script>
+<script src="https://accounts.google.com/gsi/client" onerror="void 0"></script>
+<script>
+/* ==== CẤU HÌNH FIREBASE: thay bằng cấu hình của project của anh ==== */
+const FIREBASE_CONFIG={apiKey:"THAY_APIKEY",authDomain:"THAY.firebaseapp.com",projectId:"THAY_PROJECT_ID",appId:"THAY_APPID"};
+
+const DEMO=location.protocol==='file:'||/^THAY/.test(FIREBASE_CONFIG.apiKey);
+let auth,db;
+if(!DEMO){ firebase.initializeApp(FIREBASE_CONFIG); auth=firebase.auth(); db=firebase.firestore(); }
+else{
+  /* Chế độ dùng thử: dữ liệu lưu trong localStorage của trình duyệt này, không cần đăng nhập */
+  const KEY='vt_demo_v4';
+  let store=JSON.parse(localStorage.getItem(KEY)||'{}');
+  store.users=store.users||{}; store.users.demo={email:'demo@local',name:'Người dùng thử',role:'admin'};
+  const subs=[], persist=()=>localStorage.setItem(KEY,JSON.stringify(store));
+  const rid=()=>Math.random().toString(36).slice(2,12);
+  const apply=(v,old)=>v&&v.__inc!==undefined?(Number(old)||0)+v.__inc:v;
+  const notify=()=>subs.forEach(f=>f());
+  const mkQuery=(c,ord,lim)=>({
+    orderBy:(f,d)=>mkQuery(c,[f,d||'asc'],lim), limit:n=>mkQuery(c,ord,n),
+    onSnapshot:cb=>{
+      const run=()=>{ let docs=Object.entries(store[c]||{}).map(([id,d])=>({id,data:()=>d,_d:d}));
+        if(ord) docs.sort((x,y)=>(ord[1]==='desc'?-1:1)*((x._d[ord[0]]||0)-(y._d[ord[0]]||0)));
+        if(lim) docs=docs.slice(0,lim); cb({docs}); };
+      subs.push(run); run(); return ()=>{};
+    }});
+  const docRef=(c,id)=>({
+    get:async()=>({exists:!!(store[c]&&store[c][id]),data:()=>store[c]&&store[c][id]}),
+    set:async d=>{(store[c]=store[c]||{})[id]={...d}; persist(); notify();},
+    update:async d=>{const o=(store[c]||{})[id]||{}; const n={...o}; for(const k in d) n[k]=apply(d[k],o[k]); (store[c]=store[c]||{})[id]=n; persist(); notify();},
+    delete:async()=>{ if(store[c]) delete store[c][id]; persist(); notify(); }});
+  db={collection:c=>({...mkQuery(c),
+      doc:id=>docRef(c,id||rid()),
+      add:async d=>{const id=rid(); await docRef(c,id).set(d); return {id};}}),
+    batch:()=>{const ops=[]; return {set:(r,d)=>ops.push([r,d]), commit:async()=>{for(const [r,d] of ops) await r.set(d);}};}};
+  auth={onAuthStateChanged:cb=>setTimeout(()=>cb({uid:'demo',email:'demo@local',displayName:'Người dùng thử'}),0),
+        getRedirectResult:()=>Promise.resolve(), signOut:()=>location.reload()};
+}
+const inc=d=>DEMO?{__inc:d}:firebase.firestore.FieldValue.increment(d);
+const serverTs=()=>DEMO?Date.now():firebase.firestore.FieldValue.serverTimestamp();
+
+const SEED=[["sup", "Bộ dây thở dùng một lần 2 bẫy nước", "Bộ", "Cọc 2", "20"], ["sup", "Bộ dây truyền dịch PMH kim cánh bướm", "Bộ", "", ""], ["sup", "Bộ đo huyết áp xâm lấn 1 đường", "Bộ", "", ""], ["sup", "Bơm cho ăn MPV 50ml", "Cái", "", ""], ["sup", "Bơm tiêm ECO 5ml", "Cái", "", ""], ["sup", "Bơm tiêm ECO 10ml", "Cái", "", ""], ["sup", "Bơm tiêm ECO 50ml", "Cái", "", ""], ["sup", "Catheter chạy thận nhân tạo 2 nòng", "Cái", "Cọc 2", "5"], ["sup", "Dây hút dịch ECO", "Cái", "", ""], ["sup", "Dây nối bơm tiêm điện", "Cái", "", ""], ["sup", "Dây truyền máu", "Cái", "Cọc 2", "20"], ["sup", "Gạc phẫu thuật 10x10cm 6 lớp", "Miếng", "", ""], ["sup", "Găng tay kiểm tra", "Đôi", "", ""], ["sup", "Găng tay phẫu thuật", "Cái", "Cọc 2", "30"], ["sup", "Kim luồn tĩnh mạch", "Cái", "", ""], ["sup", "Kim tiêm Tanaphar", "Cái", "", ""], ["sup", "Kim Artline", "Cái", "Cọc 2", "3"], ["sup", "Kim chọc dò TS", "Cái", "Cọc 2", "5"], ["sup", "Mask oxy có túi", "Cái", "", ""], ["sup", "Ống thông dạ dày MPV", "Cái", "", ""], ["sup", "Ống NKQ", "Cái", "Cọc 2", "10"], ["sup", "Sonde Foley 2 nhánh", "Cái", "Cọc 2", "10"], ["sup", "Túi nước tiểu", "Cái", "Cọc 2", "10"], ["sup", "Túi camera", "Cái", "Cọc 2", "6"], ["sup", "Catheter TMTT 1 nòng", "Cái", "Cọc 2", "5"], ["sup", "Catheter TMTT 2 nòng", "Cái", "Cọc 2", "5"], ["sup", "Catheter TMTT 3 nòng", "Cái", "Cọc 2", "10"], ["sup", "Catheter động mạch", "Cái", "Cọc 2", "3"], ["sup", "Canyn MKQ", "Cái", "Cọc 2", "5"], ["sup", "Artline", "Cái", "Cọc 2", "3"], ["sup", "Trocar dẫn lưu MP", "Cái", "Cọc 2", "5"], ["sup", "Bóng bóp", "Cái", "Cọc 2", "22"], ["sup", "Lưỡi dao mổ", "Cái", "Cọc 2", "5"], ["sup", "Chỉ Nylon (số 2.0; 3.0)", "Lá", "Cọc 2", "10"], ["sup", "Bộ quả lọc máu liên tục M100", "Bộ", "Cọc 2", "4"], ["sup", "Bộ quả lọc máu liên tục Oxiris", "Bộ", "Cọc 2", "2"], ["sup", "Bộ quả lọc máu TPE 2000", "Bộ", "Cọc 2", "2"], ["sup", "Bơm tiêm điện", "Cái", "Cọc 2", "13"], ["sup", "Huyết áp", "Cái", "Cọc 2", "9"], ["sup", "Ống thông dạ dày", "Cái", "Cọc 2", "10"], ["drug", "Morphin 10mg/ml", "Ống", "Tủ trực", "5"], ["drug", "Fentanyl 0,1mg", "Ống", "Tủ trực", "20"], ["drug", "Seduxen 5mg", "Ống", "Tủ trực", "20"], ["drug", "Diazepam 10mg", "Ống", "Tủ trực", "20"], ["drug", "Zodalan 1mg", "Ống", "Tủ trực", "50"], ["drug", "Adrenalin 1mg", "Ống", "Tủ trực", "250"], ["drug", "Noradrenalin 4mg", "Ống", "Tủ trực", "125"], ["drug", "Budesonide 0,5mg KDung", "Ống", "Tủ trực", "10"], ["drug", "Methylprednisolon 40mg", "Lọ", "Tủ trực", "10"], ["drug", "Vitamin K 1mg/ml", "Ống", "Tủ trực", "20"], ["drug", "Diphenhydramin 0,01g (Dimedrol)", "Ống", "Tủ trực", "10"], ["drug", "Dobutamin 250mg", "Lọ", "Tủ trực", "20"], ["drug", "Tranexamic Acid 250mg", "Ống", "Tủ trực", "10"], ["drug", "Furosemid 20mg", "Ống", "Tủ trực", "100"], ["drug", "Haloperidol 5mg", "Ống", "Tủ trực", "5"], ["drug", "Kali Clorid 1g", "Ống", "Tủ trực", "100"], ["drug", "Calci clorid 0,5g", "Ống", "Tủ trực", "20"], ["drug", "Adenosine 6mg", "Ống", "Tủ trực", "5"], ["drug", "Drotaverine hydrochloride 40mg", "Ống", "Tủ trực", "5"], ["drug", "Aspirin", "Viên", "Tủ trực", "10"], ["drug", "Omeprazol 40mg", "Lọ", "Tủ trực", "10"], ["drug", "Salbutamol 0,5mg/5ml", "Ống", "Tủ trực", "10"], ["drug", "Natri clorid 0,9% 500ml", "Chai", "Tủ trực", "80"], ["drug", "Vitamin B1 0,1g", "Ống", "Tủ trực", "20"], ["drug", "Salbutamol khí dung", "Ống", "Tủ trực", "10"], ["drug", "Valproate 4mg", "Lọ", "Tủ trực", "10"], ["drug", "Atropin sulfat 0,25mg", "Ống", "Tủ trực", "100"], ["drug", "Magnesi sulfat 15%", "Ống", "Tủ trực", "10"], ["drug", "Neostigmin 0,5mg/ml", "Ống", "Tủ trực", "5"], ["drug", "Metoprolol tartrate 25mg", "Viên", "Tủ trực", "10"], ["drug", "Amlodipine 5mg", "Viên", "Tủ trực", "10"], ["drug", "Duoplavin", "Viên", "Tủ trực", "10"], ["drug", "Doxycyclin", "Viên", "Tủ trực", "10"], ["drug", "Ivabradine 7,5mg", "Viên", "Tủ trực", "10"], ["drug", "Sorbitol 5g", "Gói", "Tủ trực", "20"], ["drug", "Ticarlinat 1,6g", "Lọ", "Tủ trực", "20"], ["drug", "Ceftriaxone 1g", "Lọ", "Tủ trực", "20"], ["drug", "Digoxin 0,25mg", "Ống", "Tủ trực", "5"], ["drug", "Levofloxacin 500mg", "Chai", "Tủ trực", "10"], ["drug", "Lidocain hydroclorid 40mg/2ml", "Ống", "Tủ trực", "20"], ["drug", "Paracetamol viên", "Viên", "Tủ trực", "10"], ["drug", "Lipofundin 20%", "Chai", "Tủ trực", "2"], ["drug", "Enoxaparin natri 40mg", "Bơm tiêm", "Tủ trực", "5"], ["drug", "Enoxaparin natri 60mg", "Bơm tiêm", "Tủ trực", "5"], ["drug", "Metronidazol 500mg", "Chai", "Tủ trực", "10"], ["drug", "Nicardipin 10mg/10ml", "Ống", "Tủ trực", "20"], ["drug", "Nimodipin 10mg/50ml", "Chai", "Tủ trực", "5"], ["drug", "Nitroglycerin 5mg", "Ống", "Tủ trực", "20"], ["drug", "Paracetamol 1g", "Chai", "Tủ trực", "20"], ["drug", "Volulite 6% 500ml", "Chai", "Tủ trực", "5"], ["drug", "Manitol 20% 250ml", "Chai", "Tủ trực", "5"], ["drug", "Glucose 20% 500ml", "Chai", "Tủ trực", "10"], ["drug", "Natri Bicarbonat 4,2% 250ml", "Chai", "Tủ trực", "20"], ["drug", "Glucose 5% 500ml", "Chai", "Tủ trực", "20"], ["drug", "Natri Bicarbonat 8,4% 10ml", "Ống", "Tủ trực", "30"], ["drug", "Ringer lactat 500ml", "Chai", "Tủ trực", "10"], ["drug", "Atracurium 25mg/2,5ml", "Ống", "Tủ trực", "20"], ["drug", "Dịch lọc", "Túi", "Tủ trực", "100"], ["drug", "Heparin 25.000 UI", "Lọ", "Tủ trực", "5"], ["drug", "Propofol 1% 20ml", "Ống", "Tủ trực", "20"], ["drug", "Amiodarone hydrochloride 150mg", "Ống", "Tủ trực", "20"], ["drug", "Insulin 30/70", "Lọ", "Tủ trực", "1"], ["drug", "Insulin R", "Lọ", "Tủ trực", "1"], ["equip", "Drager Evita V600", "", "Máy thở", null, 1], ["equip", "Drager Savina", "", "Máy thở", null, 6], ["equip", "Drager Savina 300", "", "Máy thở", null, 5], ["equip", "Drager Oxylog 300", "", "Máy thở", null, 1], ["equip", "GE R860", "", "Máy thở", null, 5], ["equip", "Bennet 840", "", "Máy thở", null, 2], ["equip", "HT70", "", "Máy thở", null, 1], ["equip", "HFNC", "", "Máy thở", null, 3], ["equip", "Xquang", "", "Máy khác", null, 1], ["equip", "Máy sốc điện", "", "Máy khác", null, 1], ["equip", "Đèn mổ", "", "Máy khác", null, 1], ["equip", "Máy siêu âm", "", "Máy khác", null, 1], ["equip", "Bình oxy", "", "Máy khác", null, 3], ["equip", "Máy hút ẩm", "", "Máy khác", null, 3], ["equip", "Máy lọc KK", "", "Máy khác", null, 1], ["equip", "Khí dung", "", "Máy khác", null, 4], ["equip", "Áp lực âm", "", "Máy khác", null, 2], ["equip", "Máy hút di động", "", "Máy khác", null, 1], ["equip", "Lưu điện", "", "Máy khác", null, 3], ["equip", "SpO2 cầm tay", "", "Máy khác", null, 3], ["equip", "ECMO", "", "Máy khác", null, 1], ["equip", "Monitor", "", "Máy khác", null, 11], ["equip", "Máy lọc máu Prismaflex", "", "Máy khác", null, 2], ["equip", "Bộ mở khí quản", "", "Máy khác", null, 2], ["equip", "Đèn NKQ", "", "Máy khác", null, 4]];
+const LOANABLE=['Bơm tiêm điện','Máy thở'];
+const KIND={sup:'Vật tư',drug:'Thuốc',equip:'Máy khác',mt:'Máy thở'};
+const TABS=[['drug','Thuốc'],['sup','Vật tư'],['mt','Máy thở'],['equip','Máy khác'],['hand','Bàn giao'],['hist','Lịch sử'],['dash','Tổng quan']];
+const ROLE_NAME={staff:'Nhân viên',leader:'Lãnh đạo',admin:'Quản trị'};
+const F={drug:'all',sup:'all',equip:'all',mt:'all'};
+let me=null,role=null,tab='drug',items=[],logs=[],loans=[],handovers=[],hdate=null,pending=false,seeded=false;
+
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=()=>new Date().toISOString().slice(0,10);
+const days=d=>Math.round((new Date(d)-new Date(today()))/864e5);
+const canWrite=()=>role==='staff'||role==='admin';
+const byId=id=>items.find(x=>x.id===id);
+const num=v=>(v===null||v===undefined||v==='')?null:Number(v);
+const fmt=t=>(t?(t.toDate?t.toDate():new Date(t)):new Date()).toLocaleString('vi-VN');
+const openLoans=()=>loans.filter(l=>!l.returned);
+const loanSum=(id,dir)=>openLoans().filter(l=>l.itemId===id&&l.dir===dir).reduce((a,l)=>a+Number(l.qty||0),0);
+const short=x=>(x.kind==='equip'||num(x.std)===null||num(x.qty)===null)?0:Math.max(0,x.std+loanSum(x.id,'in')-x.qty-(num(x.used)||0)-loanSum(x.id,'out'));
+const expSoon=x=>x.kind==='drug'&&x.expiry&&days(x.expiry)<=60;
+const free=x=>(num(x.qty)||0)+loanSum(x.id,'in')-loanSum(x.id,'out')-(num(x.inUse)||0)-(num(x.broken)||0);
+const attention=x=>short(x)>0||expSoon(x)||(x.kind==='equip'&&(num(x.broken)||0)>0);
+const pname=l=>esc(lname(l));
+
+/* ---- Đăng nhập ---- */
+function gate(html){ const g=document.getElementById('gate'); g.innerHTML=html; g.style.display='block'; document.getElementById('app').style.display='none'; }
+function login(){
+  const p=new firebase.auth.GoogleAuthProvider();
+  if(/Mobi|Android|iPhone/i.test(navigator.userAgent)) auth.signInWithRedirect(p);
+  else auth.signInWithPopup(p).catch(e=>alert(e.message));
+}
+auth.getRedirectResult().catch(e=>alert(e.message));
+auth.onAuthStateChanged(async u=>{
+  if(!u){ gate('<p>Vui lòng đăng nhập bằng tài khoản Google.</p><button class="btn" onclick="login()">Đăng nhập bằng Google</button>'); return; }
+  me={uid:u.uid,email:u.email,name:u.displayName||u.email};
+  try{
+    const ref=db.collection('users').doc(u.uid), snap=await ref.get();
+    if(!snap.exists){ await ref.set({email:me.email,name:me.name,role:'pending'}); role='pending'; } else role=snap.data().role;
+  }catch(e){ gate('Lỗi đọc quyền: '+esc(e.message)+'<br><span class="muted">Kiểm tra lại Firestore Rules.</span>'); return; }
+  if(['staff','leader','admin'].includes(role)) startApp();
+  else gate(`<p>Tài khoản <b>${esc(me.email)}</b> đang chờ quản trị viên cấp quyền.</p><p class="muted">Sau khi được cấp quyền, tải lại trang.</p><button class="ghost" onclick="auth.signOut()">Đăng xuất</button>`);
+});
+function startApp(){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('logout').style.display='inline-block';
+  document.getElementById('who').textContent=DEMO?'DÙNG THỬ · dữ liệu chỉ lưu trên máy này':`${me.name} · ${ROLE_NAME[role]}${canWrite()?'':' (chỉ xem)'}`;
+  if(role==='leader') tab='dash';
+  db.collection('items').onSnapshot(s=>{
+    items=s.docs.map(d=>({id:d.id,...d.data()}));
+    if(DEMO&&!items.length&&!seeded){ seeded=true; seedAll(); return; }
+    render();
+  },e=>alert('Lỗi tải dữ liệu: '+e.message));
+  db.collection('loans').orderBy('at','desc').limit(300).onSnapshot(s=>{ loans=s.docs.map(d=>({id:d.id,...d.data()})); render(); });
+  db.collection('log').orderBy('at','desc').limit(1000).onSnapshot(s=>{ logs=s.docs.map(d=>({id:d.id,...d.data()})); if(tab==='dash'||tab==='hist') render(); });
+  db.collection('handovers').orderBy('at','desc').limit(300).onSnapshot(s=>{ handovers=s.docs.map(d=>({id:d.id,...d.data()})); if(tab==='hand') render(); });
+  render();
+}
+
+/* ---- Hiển thị ---- */
+function render(){
+  if(!me||!role) return;
+  const a=document.activeElement;
+  if(a&&a.tagName==='INPUT'&&a.closest&&a.closest('#main')){ pending=true; return; }
+  pending=false;
+  document.getElementById('tabs').innerHTML=TABS.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')">${l}</button>`).join('');
+  document.getElementById('main').innerHTML=tab==='dash'?dashHTML():tab==='hand'?handHTML():tab==='hist'?histHTML():listHTML(tab);
+}
+if(document.addEventListener) document.addEventListener('focusout',()=>{ if(pending) setTimeout(render,200); });
+function go(k){ tab=k; render(); }
+function setF(k,f){ F[k]=f; render(); }
+
+function addBtn(k){
+  if(k==='mt') return `<button class="btn" onclick="loanDialog(null,'out')">+ Mượn / cho mượn</button> <button class="ghost" onclick="openForm(null,'mt')">+ Máy mới</button>`;
+  return `<button class="btn" onclick="openForm(null,'${k}')">+ Thêm</button>`;
+}
+function seedBtn(){ return (!items.length&&role==='admin')?'<p class="muted">Chưa có dữ liệu.</p><button class="btn" onclick="seedAll()">Nạp danh mục ban đầu</button>':''; }
+
+const itemsOf=k=>k==='mt'?items.filter(x=>x.kind==='equip'&&x.group==='Máy thở'):k==='equip'?items.filter(x=>x.kind==='equip'&&x.group!=='Máy thở'):items.filter(x=>x.kind===k);
+function listHTML(k){
+  const f=F[k], all=itemsOf(k);
+  const groups=[...new Set(all.map(x=>x.group).filter(Boolean))].sort();
+  const chip=(v,l)=>`<button class="fbtn ${f===v?'on':''}" onclick="setF('${k}',decodeURIComponent('${encodeURIComponent(v)}'))">${esc(l)}</button>`;
+  const nWarn=all.filter(attention).length;
+  const chips=[chip('all','Tất cả'),...groups.map(g=>chip('g:'+g,g)),chip('warn','Cần chú ý'+(nWarn?` (${nWarn})`:''))].join(' ');
+  const list=all.filter(x=>f==='all'||(f==='warn'&&attention(x))||(f.startsWith('g:')&&x.group===f.slice(2)))
+                .sort((a,b)=>a.name.localeCompare(b.name,'vi'));
+  const hint=k==='mt'?'Bấm tên máy để ghi mượn hoặc cho mượn.':k==='equip'?'Gõ trực tiếp số tổng và số hỏng.':'Gõ trực tiếp cột Nhận và Dùng. Thiếu = Cơ số − Nhận − Dùng.';
+  return `<div class="row" style="margin-bottom:8px"><div>${chips}</div>${canWrite()?addBtn(k):''}</div>
+    ${canWrite()?`<div class="muted" style="margin-bottom:6px">${hint}</div>`:''}
+    ${list.length?hdr(k)+list.map(rowHTML).join(''):(seedBtn()||'<p class="muted">Không có mục nào.</p>')}`;
+}
+
+function tags(x){
+  const t=[], out=loanSum(x.id,'out'), inn=loanSum(x.id,'in'), sh=short(x);
+  if(x.group) t.push(`<span class="muted">${esc(x.group)}</span>`);
+  if(num(x.used)>0) t.push(`<span class="tag">Đã dùng ${x.used}</span>`);
+  if(sh>0) t.push(`<span class="bad">Thiếu ${sh}</span>`);
+  if(expSoon(x)) t.push(days(x.expiry)<0?'<span class="bad">Hết hạn</span>':`<span class="warn">HSD ${days(x.expiry)} ngày</span>`);
+  openLoans().filter(l=>l.itemId===x.id).forEach(l=>t.push(`<span class="tag">${l.dir==='out'?'Cho':'Mượn của'} ${esc(l.who||l.dept||'')}: ${esc(l.qty)}</span>`));
+  if(canWrite()) t.push(`<button class="ghost" style="padding:1px 7px;font-size:12px" onclick="event.stopPropagation();openItem('${x.id}')">Mượn / cho mượn</button>`);
+  return t.join(' ');
+}
+function numIn(x,field,label){
+  const v=x[field]; const ro=!canWrite();
+  return `<label class="nb"><span>${label}</span>${ro?`<b>${v??'—'}</b>`:`<input type="number" inputmode="numeric" min="0" value="${v??''}" placeholder="—" onchange="setField('${x.id}','${field}',this.value)">`}</label>`;
+}
+const cellIn=(x,f,l)=>canWrite()?`<label class="cell"><span class="lb2">${l}</span><input class="c" type="number" inputmode="numeric" min="0" value="${x[f]??''}" placeholder="–" onchange="setField('${x.id}','${f}',this.value)"></label>`:`<div class="cell"><span class="lb2">${l}</span><b class="cc">${x[f]??'–'}</b></div>`;
+const plain=(l,v,c='')=>`<div class="cell"><span class="lb2">${l}</span><b class="cc ${c}">${v}</b></div>`;
+const loanCell=(x,dir,l)=>{const n=loanSum(x.id,dir);return `<div class="cell"><span class="lb2">${l}</span><button class="c lb ${n?'has':''}" onclick="openItem('${x.id}')">${n||'–'}</button></div>`;};
+const HDR={mt:['Tổng','Đang dùng','Hỏng','Cho mượn','Mượn','Trống'],equip:['Tổng','Hỏng'],other:['Cơ số','Nhận','Dùng','Thiếu']};
+const hdr=k=>{const h=HDR[k==='mt'||k==='equip'?k:'other'];return `<div class="g4 hdr" style="--n:${h.length}"><div>Tên</div>${h.map(x=>`<div>${x}</div>`).join('')}</div>`;};
+function rowHTML(x){
+  const ex=expSoon(x)?` <span class="${days(x.expiry)<0?'bad':'warn'}" style="font-size:12px">${days(x.expiry)<0?'Hết hạn':'HSD '+days(x.expiry)+'n'}</span>`:'';
+  const loans=openLoans().filter(l=>l.itemId===x.id).map(l=>` <span class="tag">${l.dir==='out'?'Cho':'Mượn của'} ${esc(lname(l))}: ${esc(l.qty)}</span>`).join('');
+  const name=`<div class="nm" onclick="openItem('${x.id}')"><b>${esc(x.name)}</b> <span class="muted">${esc(x.unit||'')}</span>${ex}${loans}</div>`;
+  if(x.kind==='equip'&&x.loanable){ const fr=free(x);
+    return `<div class="item g4" style="--n:6">${name}${cellIn(x,'qty','Tổng')}${cellIn(x,'inUse','Đang dùng')}${cellIn(x,'broken','Hỏng')}${loanCell(x,'out','Cho mượn')}${loanCell(x,'in','Mượn')}${plain('Trống',fr,fr<0?'bad':'')}</div>`; }
+  if(x.kind==='equip'){
+    return `<div class="item g4" style="--n:2">${name}${cellIn(x,'qty','Tổng')}${cellIn(x,'broken','Hỏng')}</div>`; }
+  const sh=short(x);
+  return `<div class="item g4" style="--n:4">${name}${plain('Cơ số',x.std??'–')}${cellIn(x,'qty','Nhận')}${cellIn(x,'used','Dùng')}${plain('Thiếu',sh||'–',sh?'bad':'')}</div>`;
+}
+
+function dashHTML(){
+  const eq=items.filter(x=>x.kind==='equip'), rest=items.filter(x=>x.kind!=='equip'&&num(x.used)>0), need=items.filter(x=>short(x)>0), exp=items.filter(expSoon), ol=openLoans();
+  const sum=f=>eq.reduce((a,x)=>a+(num(x[f])||0),0);
+  const tile=(n,l,c)=>`<div class="card stat"><b class="${n&&c?c:''}">${n}</b>${l}</div>`;
+  const sec=(t,h)=>`<h3>${t}</h3>${h||'<p class="muted">Không có.</p>'}`;
+  const needH=need.map(x=>`<div class="card row"><span>${esc(x.name)} <span class="muted">(${KIND[x.kind]})</span></span><span class="bad">thiếu ${short(x)} ${esc(x.unit||'')}</span></div>`).join('');
+  const restH=rest.map(x=>`<div class="card row"><span>${esc(x.name)} <span class="muted">(${KIND[x.kind]})</span></span><span class="warn">đã dùng ${x.used} ${esc(x.unit||'')}</span></div>`).join('');
+  const expH=exp.map(x=>`<div class="card row"><span>${esc(x.name)}</span><span class="${days(x.expiry)<0?'bad':'warn'}">HSD ${esc(x.expiry)}</span></div>`).join('');
+  const mtL=items.filter(x=>x.kind==='equip'&&x.group==='Máy thở'), ohL=items.filter(x=>x.kind==='equip'&&x.group!=='Máy thở');
+  const mtH=mtL.length?`<div class="card"><table class="tb"><tr class="muted"><td>Máy</td><td>Tổng</td><td>Dùng</td><td>Hỏng</td><td>Trống</td></tr>${mtL.map(x=>`<tr><td>${esc(x.name)}</td><td>${num(x.qty)??'—'}</td><td>${num(x.inUse)||0}</td><td class="${num(x.broken)?'bad':''}">${num(x.broken)||0}</td><td>${free(x)}</td></tr>`).join('')}</table></div>`:'';
+  const ohH=ohL.length?`<div class="card"><table class="tb"><tr class="muted"><td>Máy</td><td>Tổng</td><td>Hỏng</td></tr>${ohL.map(x=>`<tr><td>${esc(x.name)}</td><td>${num(x.qty)??'—'}</td><td class="${num(x.broken)?'bad':''}">${num(x.broken)||0}</td></tr>`).join('')}</table></div>`:'';
+  const loanH=ol.map(l=>`<div class="card row"><div><b>${esc(l.itemName)}</b> · SL ${esc(l.qty)}<div class="muted">${l.dir==='out'?'Cho':'Mượn của'} ${pname(l)} · ${esc(l.date)}</div></div>${canWrite()?`<button class="ghost" onclick="returnLoan('${l.id}')">Đã trả</button>`:''}</div>`).join('');
+  const logH=logs.slice(0,15).map(l=>`<div class="muted" style="padding:3px 0">${fmt(l.at)} · <b>${esc(l.itemName)}</b> — ${esc(l.text)} (${esc(l.by)})</div>`).join('');
+  return `<div class="stats">${tile(need.length,'Thiếu','bad')}${tile(rest.length,'Cần lĩnh bù','warn')}${tile(exp.length,'Thuốc sắp / đã hết hạn','warn')}${tile(sum('broken'),'Máy hỏng / bảo trì','bad')}${tile(ol.length,'Đang cho / mượn')}</div>
+    <p class="muted">Cập nhật tự động theo thời gian thực.</p>
+    ${seedBtn()}${sec('Thiếu (cần tìm lại)',needH)}${sec('Cần lĩnh bù',restH)}${sec('Thuốc sắp hết hạn (≤ 60 ngày)',expH)}${sec('Máy thở',mtH)}${sec('Máy khác',ohH)}${sec('Đang cho / mượn',loanH)}${sec('Hoạt động gần đây',logH)}`;
+}
+
+/* ---- Thao tác ---- */
+function addLog(item,text){ return db.collection('log').add({itemId:item.id||'',itemName:item.name,kind:item.kind,text,by:me.name,at:serverTs()}); }
+async function setField(id,field,raw){
+  const x=byId(id); if(!x||!canWrite()) return;
+  const v=num(raw), old=num(x[field]);
+  if(v===old) return;
+  if(v!==null&&(isNaN(v)||v<0)){ render(); return alert('Nhập số không âm.'); }
+  await db.collection('items').doc(id).update({[field]:v,updatedBy:me.name,updatedAt:serverTs()});
+  const L={used:'Đã dùng',qty:x.kind==='equip'?'Tổng số':'Thực nhận',inUse:'Đang dùng',broken:'Hỏng / bảo trì'};
+  await addLog(x,`${L[field]}: ${old??'—'} → ${v??'—'}`);
+}
+
+function openItem(id){
+  const x=byId(id); if(!x) return;
+  const ls=openLoans().filter(l=>l.itemId===id);
+  const info=[x.group,x.kind!=='equip'&&x.std!=null?'Cơ số '+x.std:'',x.kind==='drug'&&x.expiry?'HSD '+x.expiry:'',x.location,x.note].filter(Boolean).map(esc).join(' · ');
+  openDlg(`<h3 style="margin-top:0">${esc(x.name)}</h3><div class="muted">${info||'Chưa có thông tin thêm.'}</div>
+    <h3>Đang cho / mượn</h3>${ls.map(l=>`<div class="card row"><span>${l.dir==='out'?'Cho':'Mượn của'} <b>${pname(l)}</b> · SL ${esc(l.qty)}</span>${canWrite()?`<button class="ghost" onclick="returnLoan('${l.id}')">Đã trả</button>`:''}</div>`).join('')||'<p class="muted">Không có.</p>'}
+    <div class="row" style="margin-top:12px"><div>${canWrite()?`${x.kind!=='equip'?`<button class="btn" style="background:#2e7d32" onclick="openRestock('${id}')">Lĩnh bù</button> `:''}${x.loanable?`<button class="btn" onclick="openLoan('${id}','out')">Cho mượn</button> <button class="btn" onclick="openLoan('${id}','in')">Mượn</button> `:''}<button class="ghost" onclick="openForm('${id}')">Sửa</button>`:''}</div><button class="ghost" onclick="closeDlg()">Đóng</button></div>`);
+}
+function openRestock(id){
+  const x=byId(id), u=num(x.used)||0;
+  openDlg(`<h3 style="margin-top:0">Lĩnh bù — ${esc(x.name)}</h3><p class="muted">Số lĩnh về được cộng vào thực nhận và trừ khỏi số đã dùng.</p>
+    <div><label class="muted">Số lượng lĩnh bù</label><input id="f_n" type="number" min="1" value="${u||1}"></div>
+    <div class="row" style="margin-top:12px"><span></span><div><button class="ghost" onclick="closeDlg()">Hủy</button> <button class="btn" onclick="saveRestock('${id}')">Lưu</button></div></div>`);
+}
+async function saveRestock(id){
+  const x=byId(id); if(!x) return;
+  const n=Number(document.getElementById('f_n').value||0);
+  if(!(n>0)) return alert('Nhập số lượng.');
+  const u=num(x.used)||0, q=num(x.qty)||0;
+  await db.collection('items').doc(id).update({qty:q+n,used:Math.max(0,u-n),updatedBy:me.name,updatedAt:serverTs()});
+  await addLog(x,`Lĩnh bù ${n} (thực nhận ${q} → ${q+n})`);
+  closeDlg();
+}
+const lname=l=>[l.dept,l.who].filter(Boolean).join(' – ');
+function loanDialog(presetId,dir){
+  const opts=items.filter(x=>x.loanable).sort((a,b)=>a.name.localeCompare(b.name,'vi')).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('');
+  const pick=presetId?'':`<div class="full"><label>Máy / thiết bị</label><select id="l_item" onchange="document.getElementById('l_new').style.display=this.value==='__new__'?'block':'none'"><option value="">— chọn —</option>${opts}<option value="__new__">Máy khác (nhập tên)</option></select>
+    <input id="l_new" placeholder="Tên máy, ví dụ: Savina của khoa X" style="display:none;margin-top:6px"></div>`;
+  const title=presetId?`Mượn / cho mượn — ${esc((byId(presetId)||{}).name)}`:'Mượn / cho mượn';
+  openDlg(`<h3 style="margin-top:0">${title}</h3><div class="form">
+    <div><label>Loại</label><select id="l_dir"><option value="out" ${dir!=='in'?'selected':''}>Cho khoa khác mượn</option><option value="in" ${dir==='in'?'selected':''}>Mượn của khoa khác</option></select></div>
+    <div><label>Số lượng</label><input id="l_qty" type="number" min="1" value="1"></div>
+    ${pick}
+    <div><label>Khoa</label><input id="l_dept" placeholder="ví dụ: Hồi sức tích cực"></div>
+    <div><label>Người cho / người mượn</label><input id="l_who"></div>
+    <div class="full"><label>Ghi chú</label><input id="l_note"></div></div>
+    <div class="row" style="margin-top:12px"><span></span><div><button class="ghost" onclick="closeDlg()">Hủy</button> <button class="btn" onclick="saveLoan2(${presetId?`'${presetId}'`:'null'})">Lưu</button></div></div>`);
+}
+const openLoan=(id,dir)=>loanDialog(id,dir);
+async function saveLoan2(presetId){
+  const v=n=>{const e=document.getElementById(n);return e?e.value.trim():'';};
+  let id=presetId, name=(byId(presetId)||{}).name||'';
+  if(!id){
+    const sel=v('l_item');
+    if(!sel) return alert('Chọn máy.');
+    if(sel==='__new__'){
+      name=v('l_new'); if(!name) return alert('Nhập tên máy.');
+      const r=await db.collection('items').add({kind:'equip',name,group:'Máy thở',unit:'',qty:0,inUse:0,broken:0,loanable:true,location:'',note:'',updatedBy:me.name,updatedAt:serverTs()});
+      id=r.id;
+    } else { id=sel; name=(byId(sel)||{}).name||''; }
+  }
+  const dir=v('l_dir')||'out', qty=Number(v('l_qty')||0), dept=v('l_dept'), who=v('l_who'), note=v('l_note');
+  if(!(qty>0)) return alert('Nhập số lượng.');
+  if(!dept&&!who) return alert('Nhập khoa hoặc người.');
+  await db.collection('loans').add({itemId:id,itemName:name,kind:'equip',dir,dept,who,qty,note,date:today(),returned:false,by:me.name,at:serverTs()});
+  const L=[dept,who].filter(Boolean).join(' – ');
+  await addLog({id,name,kind:'equip'},dir==='out'?`Cho ${L} mượn ${qty}`:`Mượn của ${L} ${qty}`);
+  closeDlg();
+}
+async function returnLoan(id){
+  const l=loans.find(z=>z.id===id); if(!l||!canWrite()) return;
+  await db.collection('loans').doc(id).update({returned:true,returnedAt:serverTs(),returnedBy:me.name});
+  await addLog({id:l.itemId,name:l.itemName,kind:l.kind},`${l.dir==='out'?lname(l)+' đã trả':'Đã trả '+lname(l)} ${l.qty}`);
+  closeDlg();
+}
+
+function openForm(id,kind){
+  const x=id?byId(id):{kind:kind==='mt'?'equip':kind,group:kind==='mt'?'Máy thở':''}, k=x.kind;
+  const f=(lab,name,type,val,cls='')=>`<div class="${cls}"><label>${lab}</label><input id="f_${name}" type="${type}" ${type==='number'?'min="0"':''} value="${esc(val??'')}"></div>`;
+  let b=`<h3 style="margin-top:0">${id?'Sửa':'Thêm'} — ${KIND[k]}</h3><div class="form">`+f('Tên','name','text',x.name,'full')+f('Nhóm phụ trách','group','text',x.group)+f('Đơn vị','unit','text',x.unit);
+  b+=k==='equip'?f('Tổng số máy của khoa','qty','number',x.qty):f('Cơ số','std','number',x.std);
+  if(k==='drug') b+=f('Hạn dùng','expiry','date',x.expiry);
+  b+=f('Vị trí','location','text',x.location)+`<div class="full"><label>Ghi chú</label><input id="f_note" value="${esc(x.note)}"></div></div>
+    <div class="row" style="margin-top:12px"><div>${id&&role==='admin'?`<button class="ghost" style="color:#b00020" onclick="delItem('${id}')">Xóa</button>`:''}</div>
+    <div><button class="ghost" onclick="closeDlg()">Hủy</button> <button class="btn" onclick="saveForm(${id?`'${id}'`:'null'},'${k}')">Lưu</button></div></div>`;
+  openDlg(b);
+}
+async function saveForm(id,k){
+  const v=n=>{const e=document.getElementById('f_'+n); return e?e.value.trim():'';};
+  if(!v('name')) return alert('Nhập tên.');
+  const data={kind:k,name:v('name'),group:v('group'),unit:v('unit'),location:v('location'),note:v('note'),updatedBy:me.name,updatedAt:serverTs()};
+  if(k==='equip') data.qty=num(v('qty')); else data.std=num(v('std'));
+  if(k==='drug') data.expiry=v('expiry');
+  if(id){ await db.collection('items').doc(id).update(data); await addLog({id,...data},'Sửa thông tin'); }
+  else{
+    if(k==='equip'){ data.inUse=0; data.broken=0; data.loanable=data.group==='Máy thở'; } else data.qty=null;
+    const r=await db.collection('items').add(data); await addLog({id:r.id,...data},'Thêm mới');
+  }
+  closeDlg();
+}
+async function delItem(id){
+  if(role!=='admin') return;
+  const x=byId(id); if(!x||!confirm('Xóa "'+x.name+'"?')) return;
+  await db.collection('items').doc(id).delete(); await addLog(x,'Xóa mục'); closeDlg();
+}
+async function seedAll(){
+  const b=db.batch(), have=new Set(items.map(x=>x.kind+'|'+x.name.toLowerCase()));
+  for(const [kind,name,unit,group,std,qty0] of SEED){
+    if(have.has(kind+'|'+name.toLowerCase())) continue;
+    b.set(db.collection('items').doc(),kind==='equip'
+      ?{kind,name,unit,group,qty:qty0==null?null:Number(qty0),inUse:0,broken:0,location:'',note:'',loanable:LOANABLE.includes(name)||group==='Máy thở',updatedBy:me.name,updatedAt:serverTs()}
+      :{kind,name,unit,group,std:std?Number(std):null,qty:null,expiry:'',location:'',note:'',loanable:LOANABLE.includes(name),updatedBy:me.name,updatedAt:serverTs()});
+  }
+  await b.commit();
+}
+/* ---- Bàn giao ca ---- */
+const tmOf=t=>t?(t.toDate?t.toDate():new Date(t)).getTime():0;
+const CATS={drug:'Thuốc',sup:'Vật tư',mt:'Máy thở'};
+const catOf=it=>it.kind==='drug'?'Thuốc':it.kind==='sup'?'Vật tư':it.group==='Máy thở'?'Máy thở':'Máy khác';
+const inCat=(x,c)=>c==='mt'?(x.kind==='equip'&&x.group==='Máy thở'):c==='drug'?x.kind==='drug':c==='sup'?x.kind==='sup':false;
+const csvCell=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+const HAND_COLS=['Thực nhận / Tổng','Đã dùng / Đang dùng','Hỏng','Thiếu','Cho mượn','Mượn','Trống'];
+const nowDT=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;};
+const fmtDT=s=>{if(!s) return '';const [dt,tm]=s.split('T');return `${tm||''} ${dt.split('-').reverse().join('/')}`;};
+function handRowVals(it){
+  return it.kind==='equip'?[it.qty??'',it.inUse??'',it.broken??'','',it.out||'',it.in||'',it.free??'']
+                          :[it.qty??'',it.used??'','',it.short||'',it.out||'',it.in||'',''];
+}
+function handHTML(){
+  const d=hdate||today();
+  const list=handovers.filter(h=>(h.tgGiao||'').slice(0,10)===d).sort((a,b)=>(a.tgGiao||'')<(b.tgGiao||'')?-1:1);
+  const ctl=`<div class="row" style="margin-bottom:8px"><input type="date" value="${d}" style="width:auto" onchange="hdate=this.value;render()">
+    <div>${canWrite()?'<button class="btn" onclick="openHand()">+ Ghi bàn giao</button> ':''}<button class="ghost" onclick="exportHand()">Xuất CSV</button> ${canWrite()?'<button class="ghost" onclick="saveDayToDrive(hdate||today())">Lưu lên Drive</button>':''}</div></div>`;
+  const cards=list.map(h=>{
+    const its=[...(h.items||[])].sort((a,b)=>catOf(a).localeCompare(catOf(b),'vi')||a.name.localeCompare(b.name,'vi'));
+    let cur='', rows='';
+    for(const it of its){
+      const c=catOf(it); if(c!==cur){ cur=c; rows+=`<tr><td colspan="9" style="background:#eef3f8;font-weight:600;text-align:left">${c}</td></tr>`; }
+      const v=handRowVals(it); rows+=`<tr><td>${esc(it.name)}</td><td>${it.std??''}</td>${v.map((x,i)=>`<td class="${i===3&&x?'bad':''}">${esc(x)}</td>`).join('')}</tr>`;
+    }
+    const chips=(h.cats||[]).map(c=>`<span class="tag">${CATS[c]||c}</span>`).join(' ');
+    return `<details class="card" ${list.length===1?'open':''}><summary>${chips} giao <b>${esc(h.giao||'—')}</b> ${fmtDT(h.tgGiao)} → nhận <b>${esc(h.nhan||'—')}</b> ${fmtDT(h.tgNhan)}</summary>
+      ${h.note?`<p class="muted">${esc(h.note)}</p>`:''}<div class="muted">Ghi bởi ${esc(h.by||'')}</div>
+      <div style="overflow-x:auto"><table class="tb"><tr class="muted"><td>Tên</td><td>Cơ số</td>${HAND_COLS.map(c=>`<td>${c}</td>`).join('')}</tr>${rows}</table></div></details>`;
+  }).join('');
+  return ctl+(cards||`<p class="muted">Chưa có bàn giao cho ngày ${fmtDT(d+'T').replace(/ $/,'')}.</p>`);
+}
+function openHand(){
+  const cb=(c,l)=>`<label style="margin-right:12px"><input type="checkbox" id="c_${c}" checked style="width:auto"> ${l}</label>`;
+  openDlg(`<h3 style="margin-top:0">Ghi bàn giao</h3>
+    <div style="margin-bottom:10px">${cb('drug','Thuốc')}${cb('sup','Vật tư')}${cb('mt','Máy thở')}</div>
+    <div class="form">
+    <div><label>Người giao</label><input id="h_giao"></div>
+    <div><label>Thời gian giao</label><input type="datetime-local" id="h_tgGiao" value="${nowDT()}"></div>
+    <div><label>Người nhận</label><input id="h_nhan"></div>
+    <div><label>Thời gian nhận</label><input type="datetime-local" id="h_tgNhan" value="${nowDT()}"></div>
+    <div class="full"><label>Ghi chú (không bắt buộc)</label><input id="h_note"></div></div>
+    <p class="muted">Lưu số hiện tại của các mục đã chọn. Số không đổi sau khi lưu.</p>
+    <div class="row" style="margin-top:12px"><span></span><div><button class="ghost" onclick="closeDlg()">Hủy</button> <button class="btn" onclick="saveHand()">Lưu bàn giao</button></div></div>`);
+}
+async function saveHand(){
+  const v=id=>document.getElementById(id).value.trim();
+  const cats=['drug','sup','mt'].filter(c=>document.getElementById('c_'+c).checked);
+  if(!cats.length) return alert('Chọn ít nhất một loại.');
+  if(!v('h_giao')&&!v('h_nhan')) return alert('Nhập người giao hoặc người nhận.');
+  const snap=items.filter(x=>cats.some(c=>inCat(x,c))).map(x=>({id:x.id,name:x.name,kind:x.kind,group:x.group||'',unit:x.unit||'',std:num(x.std),qty:num(x.qty),used:num(x.used),inUse:num(x.inUse),broken:num(x.broken),out:loanSum(x.id,'out'),in:loanSum(x.id,'in'),free:x.kind==='equip'?free(x):null,short:short(x)}));
+  const tgGiao=v('h_tgGiao')||nowDT(), tgNhan=v('h_tgNhan')||nowDT();
+  await db.collection('handovers').add({date:tgGiao.slice(0,10),cats,giao:v('h_giao'),tgGiao,nhan:v('h_nhan'),tgNhan,note:v('h_note'),by:me.name,at:serverTs(),items:snap});
+  await addLog({id:'',name:'Bàn giao',kind:'hand'},`${v('h_giao')||'—'} (${fmtDT(tgGiao)}) → ${v('h_nhan')||'—'} (${fmtDT(tgNhan)}), ${snap.length} mục`);
+  hdate=tgGiao.slice(0,10); closeDlg();
+  if(gTok){ try{ await driveSaveCsv(`ban-giao-${hdate}.csv`,handCsv(hdate)); }catch(e){ alert('Đã ghi bàn giao nhưng chưa lưu được lên Drive: '+e.message); } }
+}
+function handCsv(d){
+  const list=handovers.filter(h=>(h.tgGiao||'').slice(0,10)===d).sort((a,b)=>(a.tgGiao||'')<(b.tgGiao||'')?-1:1);
+  if(!list.length) return null;
+  const head=['Ngày giao','Giờ giao','Người giao','Giờ nhận','Người nhận','Ghi chú','Loại','Tên','Đơn vị','Cơ số',...HAND_COLS];
+  const lines=[head.map(csvCell).join(',')];
+  for(const h of list) for(const it of h.items||[])
+    lines.push([(h.tgGiao||'').slice(0,10),(h.tgGiao||'').slice(11),h.giao,(h.tgNhan||'').slice(11),h.nhan,h.note,catOf(it),it.name,it.unit,it.std??'',...handRowVals(it)].map(csvCell).join(','));
+  return lines.join('\r\n');
+}
+function exportHand(){
+  const d=hdate||today(), text=handCsv(d);
+  if(text==null) return alert('Chưa có bàn giao ngày '+d);
+  const blob=new Blob(['﻿'+text],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ban-giao-${d}.csv`; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ---- Google Drive: lưu CSV theo ngày vào thư mục "Bàn giao khoa" ---- */
+const GCID='771542294462-425rbdnal1qj9uloqohd8dlm8ohmq4ke.apps.googleusercontent.com';
+const DRIVE_FOLDER='Bàn giao khoa';
+let gTok=null, gFolder=null;
+function driveConnect(){
+  return new Promise((res,rej)=>{
+    if(!(window.google&&google.accounts&&google.accounts.oauth2)) return rej(new Error('Chưa tải được thư viện Google. Kiểm tra mạng rồi thử lại.'));
+    if(location.protocol==='file:') return rej(new Error('Lưu Drive chỉ chạy khi mở app từ địa chỉ web (GitHub Pages), không chạy khi mở file trên máy.'));
+    const c=google.accounts.oauth2.initTokenClient({client_id:GCID,scope:'https://www.googleapis.com/auth/drive.file',
+      callback:r=>{ if(r.error) rej(new Error('Google từ chối: '+r.error)); else { gTok=r.access_token; res(gTok); } }});
+    c.requestAccessToken({prompt:''});
+  });
+}
+async function gfetch(url,opt={}){
+  opt.headers=Object.assign({},opt.headers||{},{Authorization:'Bearer '+gTok});
+  const r=await fetch(url,opt);
+  if(r.status===401){ gTok=null; gFolder=null; throw new Error('Hết phiên Google, bấm Lưu lên Drive để kết nối lại.'); }
+  if(!r.ok) throw new Error('Drive lỗi '+r.status);
+  return r;
+}
+async function driveFolderId(){
+  if(gFolder) return gFolder;
+  const q=encodeURIComponent(`name='${DRIVE_FOLDER}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const j=await (await gfetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`)).json();
+  if(j.files&&j.files[0]) return gFolder=j.files[0].id;
+  const c=await (await gfetch('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:DRIVE_FOLDER,mimeType:'application/vnd.google-apps.folder'})})).json();
+  return gFolder=c.id;
+}
+async function driveSaveCsv(name,text){
+  const folder=await driveFolderId();
+  const q=encodeURIComponent(`name='${name}' and '${folder}' in parents and trashed=false`);
+  const j=await (await gfetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`)).json();
+  const body=new Blob(['﻿'+text],{type:'text/csv'});
+  if(j.files&&j.files[0]){
+    await gfetch(`https://www.googleapis.com/upload/drive/v3/files/${j.files[0].id}?uploadType=media`,{method:'PATCH',headers:{'Content-Type':'text/csv'},body});
+  }else{
+    const b='vtk'+Date.now();
+    const multi=new Blob([`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name,mimeType:'text/csv',parents:[folder]})}\r\n--${b}\r\nContent-Type: text/csv\r\n\r\n`,body,`\r\n--${b}--`]);
+    await gfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body:multi});
+  }
+}
+async function saveDayToDrive(d){
+  const text=handCsv(d);
+  if(text==null) return alert('Chưa có bàn giao ngày '+d);
+  try{
+    if(!gTok) await driveConnect();
+    await driveSaveCsv(`ban-giao-${d}.csv`,text);
+    alert(`Đã lưu ban-giao-${d}.csv vào thư mục "${DRIVE_FOLDER}" trên Drive.`);
+  }catch(e){ alert(e.message); }
+}
+
+/* ---- Lịch sử ---- */
+const ymdOf=ms=>{const t=new Date(ms),p=n=>String(n).padStart(2,'0');return `${t.getFullYear()}-${p(t.getMonth()+1)}-${p(t.getDate())}`;};
+function histHTML(){
+  const d=hdate||today();
+  const dayLogs=logs.filter(l=>l.at&&ymdOf(tmOf(l.at))===d).sort((a,b)=>tmOf(a.at)-tmOf(b.at));
+  const made=loans.filter(l=>l.date===d);
+  const back=loans.filter(l=>l.returned&&l.returnedAt&&ymdOf(tmOf(l.returnedAt))===d);
+  const ln=l=>`<div class="card"><div>${l.dir==='out'?'Cho':'Mượn của'} <b>${esc(lname(l))}</b> · ${esc(l.itemName)} · SL ${esc(l.qty)}</div><div class="muted">${l.returned?'Đã trả':'Đang mở'} · ${esc(l.by||'')}${l.note?' · '+esc(l.note):''}</div></div>`;
+  return `<div class="row" style="margin-bottom:8px"><input type="date" value="${d}" style="width:auto" onchange="hdate=this.value;render()">
+    <div>${canWrite()?'<button class="btn" onclick="saveDayToDrive(hdate||today())">Lưu lên Drive</button> ':''}<button class="ghost" onclick="exportHand()">Xuất CSV bàn giao</button></div></div>
+    <h3>Mượn / cho mượn trong ngày</h3>${made.map(ln).join('')||'<p class="muted">Không có.</p>'}
+    <h3>Trả trong ngày</h3>${back.map(ln).join('')||'<p class="muted">Không có.</p>'}
+    <h3>Nhật ký thay đổi</h3>${dayLogs.map(l=>`<div class="muted" style="padding:3px 0">${fmt(l.at).slice(11)} · <b>${esc(l.itemName)}</b> — ${esc(l.text)} (${esc(l.by)})</div>`).join('')||'<p class="muted">Không có.</p>'}`;
+}
+
+function openDlg(html){ document.getElementById('dlgbody').innerHTML=html; document.getElementById('dlg').style.display='flex'; }
+function closeDlg(){ document.getElementById('dlg').style.display='none'; }
+</script>
+</body></html>
