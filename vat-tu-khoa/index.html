@@ -361,6 +361,7 @@ const inCat=(x,c)=>c==='mt'?(x.kind==='equip'&&x.group==='Máy thở'):c==='drug
 const csvCell=v=>`"${String(v??'').replace(/"/g,'""')}"`;
 const HAND_COLS=['Thực nhận / Tổng','Đã dùng / Đang dùng','Hỏng','Thiếu','Cho mượn','Mượn','Trống'];
 const nowDT=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;};
+const tgOf=h=>h.tgBG||h.tgGiao||'';
 const fmtDT=s=>{if(!s) return '';const [dt,tm]=s.split('T');return `${tm||''} ${dt.split('-').reverse().join('/')}`;};
 function handRowVals(it){
   return it.kind==='equip'?[it.qty??'',it.inUse??'',it.broken??'','',it.out||'',it.in||'',it.free??'']
@@ -368,9 +369,9 @@ function handRowVals(it){
 }
 function handHTML(){
   const d=hdate||today();
-  const list=handovers.filter(h=>(h.tgGiao||'').slice(0,10)===d).sort((a,b)=>(a.tgGiao||'')<(b.tgGiao||'')?-1:1);
+  const list=handovers.filter(h=>tgOf(h).slice(0,10)===d).sort((a,b)=>tgOf(a)<tgOf(b)?-1:1);
   const ctl=`<div class="row" style="margin-bottom:8px"><input type="date" value="${d}" style="width:auto" onchange="hdate=this.value;render()">
-    <div>${canWrite()?'<button class="btn" onclick="openHand()">+ Ghi bàn giao</button> ':''}<button class="ghost" onclick="exportHand()">Xuất CSV</button> ${canWrite()?'<button class="ghost" onclick="saveDayToDrive(hdate||today())">Lưu lên Drive</button>':''}</div></div>`;
+    <div>${canWrite()?'<button class="btn" onclick="openHand()">+ Ghi bàn giao</button> ':''}<button class="ghost" onclick="exportHand()">Xuất CSV</button></div></div>`;
   const cards=list.map(h=>{
     const its=[...(h.items||[])].sort((a,b)=>catOf(a).localeCompare(catOf(b),'vi')||a.name.localeCompare(b.name,'vi'));
     let cur='', rows='';
@@ -379,7 +380,7 @@ function handHTML(){
       const v=handRowVals(it); rows+=`<tr><td>${esc(it.name)}</td><td>${it.std??''}</td>${v.map((x,i)=>`<td class="${i===3&&x?'bad':''}">${esc(x)}</td>`).join('')}</tr>`;
     }
     const chips=(h.cats||[]).map(c=>`<span class="tag">${CATS[c]||c}</span>`).join(' ');
-    return `<details class="card" ${list.length===1?'open':''}><summary>${chips} giao <b>${esc(h.giao||'—')}</b> ${fmtDT(h.tgGiao)} → nhận <b>${esc(h.nhan||'—')}</b> ${fmtDT(h.tgNhan)}</summary>
+    return `<details class="card" ${list.length===1?'open':''}><summary>${chips} ${fmtDT(tgOf(h))} · giao <b>${esc(h.giao||'—')}</b> → nhận <b>${esc(h.nhan||'—')}</b></summary>
       ${h.note?`<p class="muted">${esc(h.note)}</p>`:''}<div class="muted">Ghi bởi ${esc(h.by||'')}</div>
       <div style="overflow-x:auto"><table class="tb"><tr class="muted"><td>Tên</td><td>Cơ số</td>${HAND_COLS.map(c=>`<td>${c}</td>`).join('')}</tr>${rows}</table></div></details>`;
   }).join('');
@@ -391,9 +392,8 @@ function openHand(){
     <div style="margin-bottom:10px">${cb('drug','Thuốc')}${cb('sup','Vật tư')}${cb('mt','Máy thở')}</div>
     <div class="form">
     <div><label>Người giao</label><input id="h_giao"></div>
-    <div><label>Thời gian giao</label><input type="datetime-local" id="h_tgGiao" value="${nowDT()}"></div>
     <div><label>Người nhận</label><input id="h_nhan"></div>
-    <div><label>Thời gian nhận</label><input type="datetime-local" id="h_tgNhan" value="${nowDT()}"></div>
+    <div class="full"><label>Thời gian bàn giao</label><input type="datetime-local" id="h_tg" value="${nowDT()}"></div>
     <div class="full"><label>Ghi chú (không bắt buộc)</label><input id="h_note"></div></div>
     <p class="muted">Lưu số hiện tại của các mục đã chọn. Số không đổi sau khi lưu.</p>
     <div class="row" style="margin-top:12px"><span></span><div><button class="ghost" onclick="closeDlg()">Hủy</button> <button class="btn" onclick="saveHand()">Lưu bàn giao</button></div></div>`);
@@ -404,19 +404,24 @@ async function saveHand(){
   if(!cats.length) return alert('Chọn ít nhất một loại.');
   if(!v('h_giao')&&!v('h_nhan')) return alert('Nhập người giao hoặc người nhận.');
   const snap=items.filter(x=>cats.some(c=>inCat(x,c))).map(x=>({id:x.id,name:x.name,kind:x.kind,group:x.group||'',unit:x.unit||'',std:num(x.std),qty:num(x.qty),used:num(x.used),inUse:num(x.inUse),broken:num(x.broken),out:loanSum(x.id,'out'),in:loanSum(x.id,'in'),free:x.kind==='equip'?free(x):null,short:short(x)}));
-  const tgGiao=v('h_tgGiao')||nowDT(), tgNhan=v('h_tgNhan')||nowDT();
-  await db.collection('handovers').add({date:tgGiao.slice(0,10),cats,giao:v('h_giao'),tgGiao,nhan:v('h_nhan'),tgNhan,note:v('h_note'),by:me.name,at:serverTs(),items:snap});
-  await addLog({id:'',name:'Bàn giao',kind:'hand'},`${v('h_giao')||'—'} (${fmtDT(tgGiao)}) → ${v('h_nhan')||'—'} (${fmtDT(tgNhan)}), ${snap.length} mục`);
-  hdate=tgGiao.slice(0,10); closeDlg();
-  if(gTok){ try{ await driveSaveCsv(`ban-giao-${hdate}.csv`,handCsv(hdate)); }catch(e){ alert('Đã ghi bàn giao nhưng chưa lưu được lên Drive: '+e.message); } }
+  const tgBG=v('h_tg')||nowDT();
+  /* Kết nối Drive ngay trong lúc bấm (lần đầu Google hỏi quyền); lỗi Drive không chặn việc ghi bàn giao */
+  let driveErr=null;
+  if(!DEMO&&!gTok){ try{ await driveConnect(); }catch(e){ driveErr=e; } }
+  await db.collection('handovers').add({date:tgBG.slice(0,10),cats,giao:v('h_giao'),nhan:v('h_nhan'),tgBG,note:v('h_note'),by:me.name,at:serverTs(),items:snap});
+  await addLog({id:'',name:'Bàn giao',kind:'hand'},`${v('h_giao')||'—'} → ${v('h_nhan')||'—'} (${fmtDT(tgBG)}), ${snap.length} mục`);
+  hdate=tgBG.slice(0,10); closeDlg();
+  if(gTok){
+    setTimeout(async()=>{ try{ const t=handCsv(hdate); if(t) await driveSaveCsv(`ban-giao-${hdate}.csv`,t); }catch(e){ alert('Đã ghi bàn giao nhưng chưa lưu được lên Drive: '+e.message); } },1500);
+  } else if(driveErr&&!DEMO) alert('Đã ghi bàn giao. Chưa lưu được lên Drive: '+driveErr.message);
 }
 function handCsv(d){
-  const list=handovers.filter(h=>(h.tgGiao||'').slice(0,10)===d).sort((a,b)=>(a.tgGiao||'')<(b.tgGiao||'')?-1:1);
+  const list=handovers.filter(h=>tgOf(h).slice(0,10)===d).sort((a,b)=>tgOf(a)<tgOf(b)?-1:1);
   if(!list.length) return null;
-  const head=['Ngày giao','Giờ giao','Người giao','Giờ nhận','Người nhận','Ghi chú','Loại','Tên','Đơn vị','Cơ số',...HAND_COLS];
+  const head=['Ngày bàn giao','Giờ bàn giao','Người giao','Người nhận','Ghi chú','Loại','Tên','Đơn vị','Cơ số',...HAND_COLS];
   const lines=[head.map(csvCell).join(',')];
   for(const h of list) for(const it of h.items||[])
-    lines.push([(h.tgGiao||'').slice(0,10),(h.tgGiao||'').slice(11),h.giao,(h.tgNhan||'').slice(11),h.nhan,h.note,catOf(it),it.name,it.unit,it.std??'',...handRowVals(it)].map(csvCell).join(','));
+    lines.push([tgOf(h).slice(0,10),tgOf(h).slice(11),h.giao,h.nhan,h.note,catOf(it),it.name,it.unit,it.std??'',...handRowVals(it)].map(csvCell).join(','));
   return lines.join('\r\n');
 }
 function exportHand(){
@@ -442,7 +447,7 @@ function driveConnect(){
 async function gfetch(url,opt={}){
   opt.headers=Object.assign({},opt.headers||{},{Authorization:'Bearer '+gTok});
   const r=await fetch(url,opt);
-  if(r.status===401){ gTok=null; gFolder=null; throw new Error('Hết phiên Google, bấm Lưu lên Drive để kết nối lại.'); }
+  if(r.status===401){ gTok=null; gFolder=null; throw new Error('Hết phiên Google, ghi một bàn giao mới để kết nối lại Drive.'); }
   if(!r.ok) throw new Error('Drive lỗi '+r.status);
   return r;
 }
@@ -487,7 +492,7 @@ function histHTML(){
   const back=loans.filter(l=>l.returned&&l.returnedAt&&ymdOf(tmOf(l.returnedAt))===d);
   const ln=l=>`<div class="card"><div>${l.dir==='out'?'Cho':'Mượn của'} <b>${esc(lname(l))}</b> · ${esc(l.itemName)} · SL ${esc(l.qty)}</div><div class="muted">${l.returned?'Đã trả':'Đang mở'} · ${esc(l.by||'')}${l.note?' · '+esc(l.note):''}</div></div>`;
   return `<div class="row" style="margin-bottom:8px"><input type="date" value="${d}" style="width:auto" onchange="hdate=this.value;render()">
-    <div>${canWrite()?'<button class="btn" onclick="saveDayToDrive(hdate||today())">Lưu lên Drive</button> ':''}<button class="ghost" onclick="exportHand()">Xuất CSV bàn giao</button></div></div>
+    <div><button class="ghost" onclick="exportHand()">Xuất CSV bàn giao</button></div></div>
     <h3>Mượn / cho mượn trong ngày</h3>${made.map(ln).join('')||'<p class="muted">Không có.</p>'}
     <h3>Trả trong ngày</h3>${back.map(ln).join('')||'<p class="muted">Không có.</p>'}
     <h3>Nhật ký thay đổi</h3>${dayLogs.map(l=>`<div class="muted" style="padding:3px 0">${fmt(l.at).slice(11)} · <b>${esc(l.itemName)}</b> — ${esc(l.text)} (${esc(l.by)})</div>`).join('')||'<p class="muted">Không có.</p>'}`;
