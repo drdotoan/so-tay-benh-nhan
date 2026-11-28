@@ -209,7 +209,7 @@ function listHTML(k){
   const list=all.filter(x=>f==='all'||(f==='warn'&&attention(x))||(f.startsWith('g:')&&gOf(x)===f.slice(2)))
                 .sort((a,b)=>a.name.localeCompare(b.name,'vi'));
   const hint=k==='mt'?'Bấm tên máy để ghi mượn hoặc cho mượn.':k==='equip'?'Gõ trực tiếp số tổng và số hỏng.':'Gõ trực tiếp cột Nhận và Dùng. Thiếu = Cơ số − Nhận − Dùng.';
-  return `<div class="row" style="margin-bottom:8px"><div>${chips}</div>${canWrite()?addBtn(k):''}</div>
+  return `<div class="row" style="margin-bottom:8px"><div>${k==='mt'?'':chips}</div>${canWrite()?addBtn(k):''}</div>
     ${k==='mt'?ventBanner():''}${canWrite()?`<div class="muted" style="margin-bottom:6px">${hint}</div>`:''}
     ${list.length?(k==='mt'?SUBS.filter(g=>list.some(x=>subOf(x)===g)).map(g=>`<h4 style="margin:12px 0 4px">${g}</h4>`+hdr(k)+list.filter(x=>subOf(x)===g).map(rowHTML).join('')).join(''):hdr(k)+list.map(rowHTML).join('')):(seedBtn()||'<p class="muted">Không có mục nào.</p>')}`;
 }
