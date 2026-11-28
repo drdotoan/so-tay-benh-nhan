@@ -211,7 +211,7 @@ function listHTML(k){
   const hint=k==='mt'?'Bấm tên máy để ghi mượn hoặc cho mượn.':k==='equip'?'Gõ trực tiếp số tổng và số hỏng.':'Gõ trực tiếp cột Nhận và Dùng. Thiếu = Cơ số − Nhận − Dùng.';
   return `<div class="row" style="margin-bottom:8px"><div>${k==='mt'?'':chips}</div>${canWrite()?addBtn(k):''}</div>
     ${k==='mt'?ventBanner():''}${canWrite()?`<div class="muted" style="margin-bottom:6px">${hint}</div>`:''}
-    ${list.length?(k==='mt'?SUBS.filter(g=>list.some(x=>subOf(x)===g)).map(g=>`<h4 style="margin:12px 0 4px">${g}</h4>`+hdr(k)+list.filter(x=>subOf(x)===g).map(rowHTML).join('')).join(''):hdr(k)+list.map(rowHTML).join('')):(seedBtn()||'<p class="muted">Không có mục nào.</p>')}`;
+    ${list.length?hdr(k)+(k==='mt'?[...list].sort((a,b)=>SUBS.indexOf(subOf(a))-SUBS.indexOf(subOf(b))||a.name.localeCompare(b.name,'vi')):list).map(rowHTML).join(''):(seedBtn()||'<p class="muted">Không có mục nào.</p>')}`;
 }
 
 function tags(x){
