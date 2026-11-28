@@ -45,6 +45,16 @@ input.c{width:100%;padding:8px 0;text-align:center;font-size:16px;box-sizing:bor
   .item.g4 .nm{grid-column:1/-1}
   .hdr.g4{display:none}
   .lb2{display:block;font-size:11px;color:#666}
+  /* tab máy thở: gọn một hàng mỗi máy để vừa một màn hình */
+  .g4[style*="--n:6"]{grid-template-columns:minmax(0,1fr) repeat(6,38px);gap:2px}
+  .hdr.g4[style*="--n:6"]{display:grid;font-size:10px;line-height:1.1;padding:0 6px}
+  .item.g4[style*="--n:6"]{padding:4px 6px;margin-bottom:3px}
+  .item.g4[style*="--n:6"] .nm{grid-column:auto;font-size:12px}
+  .item.g4[style*="--n:6"] .nm b{font-size:13px;line-height:1.15}
+  .item.g4[style*="--n:6"] .nm .muted{display:none}
+  .item.g4[style*="--n:6"] .lb2{display:none}
+  .item.g4[style*="--n:6"] input.c{padding:5px 0;font-size:14px}
+  .item.g4[style*="--n:6"] .cc{font-size:14px}
 }
 </style></head><body>
 <header><div><b>Vật tư &amp; Máy móc khoa</b><div id="who" class="muted" style="color:#dfe"></div></div>
