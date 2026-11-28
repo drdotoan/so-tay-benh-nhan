@@ -98,7 +98,7 @@ const serverTs=()=>DEMO?Date.now():firebase.firestore.FieldValue.serverTimestamp
 const SEED=[["sup", "Bộ dây thở dùng một lần 2 bẫy nước", "Bộ", "Cọc 2", "20"], ["sup", "Bộ dây truyền dịch PMH kim cánh bướm", "Bộ", "", ""], ["sup", "Bộ đo huyết áp xâm lấn 1 đường", "Bộ", "", ""], ["sup", "Bơm cho ăn MPV 50ml", "Cái", "", ""], ["sup", "Bơm tiêm ECO 5ml", "Cái", "", ""], ["sup", "Bơm tiêm ECO 10ml", "Cái", "", ""], ["sup", "Bơm tiêm ECO 50ml", "Cái", "", ""], ["sup", "Catheter chạy thận nhân tạo 2 nòng", "Cái", "Cọc 2", "5"], ["sup", "Dây hút dịch ECO", "Cái", "", ""], ["sup", "Dây nối bơm tiêm điện", "Cái", "", ""], ["sup", "Dây truyền máu", "Cái", "Cọc 2", "20"], ["sup", "Gạc phẫu thuật 10x10cm 6 lớp", "Miếng", "", ""], ["sup", "Găng tay kiểm tra", "Đôi", "", ""], ["sup", "Găng tay phẫu thuật", "Cái", "Cọc 2", "30"], ["sup", "Kim luồn tĩnh mạch", "Cái", "", ""], ["sup", "Kim tiêm Tanaphar", "Cái", "", ""], ["sup", "Kim Artline", "Cái", "Cọc 2", "3"], ["sup", "Kim chọc dò TS", "Cái", "Cọc 2", "5"], ["sup", "Mask oxy có túi", "Cái", "", ""], ["sup", "Ống thông dạ dày MPV", "Cái", "", ""], ["sup", "Ống NKQ", "Cái", "Cọc 2", "10"], ["sup", "Sonde Foley 2 nhánh", "Cái", "Cọc 2", "10"], ["sup", "Túi nước tiểu", "Cái", "Cọc 2", "10"], ["sup", "Túi camera", "Cái", "Cọc 2", "6"], ["sup", "Catheter TMTT 1 nòng", "Cái", "Cọc 2", "5"], ["sup", "Catheter TMTT 2 nòng", "Cái", "Cọc 2", "5"], ["sup", "Catheter TMTT 3 nòng", "Cái", "Cọc 2", "10"], ["sup", "Catheter động mạch", "Cái", "Cọc 2", "3"], ["sup", "Canyn MKQ", "Cái", "Cọc 2", "5"], ["sup", "Artline", "Cái", "Cọc 2", "3"], ["sup", "Trocar dẫn lưu MP", "Cái", "Cọc 2", "5"], ["sup", "Bóng bóp", "Cái", "Cọc 2", "22"], ["sup", "Lưỡi dao mổ", "Cái", "Cọc 2", "5"], ["sup", "Chỉ Nylon (số 2.0; 3.0)", "Lá", "Cọc 2", "10"], ["sup", "Bộ quả lọc máu liên tục M100", "Bộ", "Cọc 2", "4"], ["sup", "Bộ quả lọc máu liên tục Oxiris", "Bộ", "Cọc 2", "2"], ["sup", "Bộ quả lọc máu TPE 2000", "Bộ", "Cọc 2", "2"], ["equip", "Bơm tiêm điện", "", "Máy thở", null, 13], ["sup", "Huyết áp", "Cái", "Cọc 2", "9"], ["sup", "Ống thông dạ dày", "Cái", "Cọc 2", "10"], ["drug", "Morphin 10mg/ml", "Ống", "Tủ trực", "5"], ["drug", "Fentanyl 0,1mg", "Ống", "Tủ trực", "20"], ["drug", "Seduxen 5mg", "Ống", "Tủ trực", "20"], ["drug", "Diazepam 10mg", "Ống", "Tủ trực", "20"], ["drug", "Zodalan 1mg", "Ống", "Tủ trực", "50"], ["drug", "Adrenalin 1mg", "Ống", "Tủ trực", "250"], ["drug", "Noradrenalin 4mg", "Ống", "Tủ trực", "125"], ["drug", "Budesonide 0,5mg KDung", "Ống", "Tủ trực", "10"], ["drug", "Methylprednisolon 40mg", "Lọ", "Tủ trực", "10"], ["drug", "Vitamin K 1mg/ml", "Ống", "Tủ trực", "20"], ["drug", "Diphenhydramin 0,01g (Dimedrol)", "Ống", "Tủ trực", "10"], ["drug", "Dobutamin 250mg", "Lọ", "Tủ trực", "20"], ["drug", "Tranexamic Acid 250mg", "Ống", "Tủ trực", "10"], ["drug", "Furosemid 20mg", "Ống", "Tủ trực", "100"], ["drug", "Haloperidol 5mg", "Ống", "Tủ trực", "5"], ["drug", "Kali Clorid 1g", "Ống", "Tủ trực", "100"], ["drug", "Calci clorid 0,5g", "Ống", "Tủ trực", "20"], ["drug", "Adenosine 6mg", "Ống", "Tủ trực", "5"], ["drug", "Drotaverine hydrochloride 40mg", "Ống", "Tủ trực", "5"], ["drug", "Aspirin", "Viên", "Tủ trực", "10"], ["drug", "Omeprazol 40mg", "Lọ", "Tủ trực", "10"], ["drug", "Salbutamol 0,5mg/5ml", "Ống", "Tủ trực", "10"], ["drug", "Natri clorid 0,9% 500ml", "Chai", "Tủ trực", "80"], ["drug", "Vitamin B1 0,1g", "Ống", "Tủ trực", "20"], ["drug", "Salbutamol khí dung", "Ống", "Tủ trực", "10"], ["drug", "Valproate 4mg", "Lọ", "Tủ trực", "10"], ["drug", "Atropin sulfat 0,25mg", "Ống", "Tủ trực", "100"], ["drug", "Magnesi sulfat 15%", "Ống", "Tủ trực", "10"], ["drug", "Neostigmin 0,5mg/ml", "Ống", "Tủ trực", "5"], ["drug", "Metoprolol tartrate 25mg", "Viên", "Tủ trực", "10"], ["drug", "Amlodipine 5mg", "Viên", "Tủ trực", "10"], ["drug", "Duoplavin", "Viên", "Tủ trực", "10"], ["drug", "Doxycyclin", "Viên", "Tủ trực", "10"], ["drug", "Ivabradine 7,5mg", "Viên", "Tủ trực", "10"], ["drug", "Sorbitol 5g", "Gói", "Tủ trực", "20"], ["drug", "Ticarlinat 1,6g", "Lọ", "Tủ trực", "20"], ["drug", "Ceftriaxone 1g", "Lọ", "Tủ trực", "20"], ["drug", "Digoxin 0,25mg", "Ống", "Tủ trực", "5"], ["drug", "Levofloxacin 500mg", "Chai", "Tủ trực", "10"], ["drug", "Lidocain hydroclorid 40mg/2ml", "Ống", "Tủ trực", "20"], ["drug", "Paracetamol viên", "Viên", "Tủ trực", "10"], ["drug", "Lipofundin 20%", "Chai", "Tủ trực", "2"], ["drug", "Enoxaparin natri 40mg", "Bơm tiêm", "Tủ trực", "5"], ["drug", "Enoxaparin natri 60mg", "Bơm tiêm", "Tủ trực", "5"], ["drug", "Metronidazol 500mg", "Chai", "Tủ trực", "10"], ["drug", "Nicardipin 10mg/10ml", "Ống", "Tủ trực", "20"], ["drug", "Nimodipin 10mg/50ml", "Chai", "Tủ trực", "5"], ["drug", "Nitroglycerin 5mg", "Ống", "Tủ trực", "20"], ["drug", "Paracetamol 1g", "Chai", "Tủ trực", "20"], ["drug", "Volulite 6% 500ml", "Chai", "Tủ trực", "5"], ["drug", "Manitol 20% 250ml", "Chai", "Tủ trực", "5"], ["drug", "Glucose 20% 500ml", "Chai", "Tủ trực", "10"], ["drug", "Natri Bicarbonat 4,2% 250ml", "Chai", "Tủ trực", "20"], ["drug", "Glucose 5% 500ml", "Chai", "Tủ trực", "20"], ["drug", "Natri Bicarbonat 8,4% 10ml", "Ống", "Tủ trực", "30"], ["drug", "Ringer lactat 500ml", "Chai", "Tủ trực", "10"], ["drug", "Atracurium 25mg/2,5ml", "Ống", "Tủ trực", "20"], ["drug", "Dịch lọc", "Túi", "Tủ trực", "100"], ["drug", "Heparin 25.000 UI", "Lọ", "Tủ trực", "5"], ["drug", "Propofol 1% 20ml", "Ống", "Tủ trực", "20"], ["drug", "Amiodarone hydrochloride 150mg", "Ống", "Tủ trực", "20"], ["drug", "Insulin 30/70", "Lọ", "Tủ trực", "1"], ["drug", "Insulin R", "Lọ", "Tủ trực", "1"], ["equip", "Drager Evita V600", "", "Máy thở", null, 1, 0], ["equip", "Drager Savina", "", "Máy thở", null, 5, 3], ["equip", "Drager Savina 300", "", "Máy thở", null, 5, 2], ["equip", "Drager Oxylog 300", "", "Máy thở", null, 1], ["equip", "GE R860", "", "Máy thở", null, 5, 0], ["equip", "Bennet 840", "", "Máy thở", null, 2, 2], ["equip", "HT70", "", "Máy thở", null, 2, 2], ["equip", "HFNC", "", "Máy thở", null, 5, 1], ["equip", "Xquang", "", "Máy khác", null, 1], ["equip", "Máy sốc điện", "", "Máy khác", null, 1], ["equip", "Đèn mổ", "", "Máy khác", null, 1], ["equip", "Máy siêu âm", "", "Máy khác", null, 1], ["equip", "Bình oxy", "", "Máy khác", null, 3], ["equip", "Máy hút ẩm", "", "Máy khác", null, 3], ["equip", "Máy lọc KK", "", "Máy khác", null, 1], ["equip", "Khí dung", "", "Máy khác", null, 4], ["equip", "Áp lực âm", "", "Máy khác", null, 2], ["equip", "Máy hút di động", "", "Máy khác", null, 1], ["equip", "Lưu điện", "", "Máy khác", null, 3], ["equip", "SpO2 cầm tay", "", "Máy khác", null, 3], ["equip", "ECMO", "", "Máy khác", null, 1], ["equip", "Monitor", "", "Máy khác", null, 11], ["equip", "Máy lọc máu Prismaflex", "", "Máy khác", null, 2], ["equip", "Bộ mở khí quản", "", "Máy khác", null, 2], ["equip", "Đèn NKQ", "", "Máy khác", null, 4]];
 const LOANABLE=['Bơm tiêm điện','Máy thở'];
 const MTL='Máy thở + bơm tiêm điện';
-const catLabel=c=>c==='Máy thở'?MTL:c;
+const catLabel=c=>c==='Máy thở'?'Máy thở (xâm nhập)':c;
 const KIND={sup:'Vật tư',drug:'Thuốc',equip:'Máy khác',mt:MTL};
 const TABS=[['drug','Thuốc'],['sup','Vật tư'],['mt',MTL],['equip','Máy khác'],['hist','Lịch sử'],['dash','Tổng quan']];
 const ROLE_NAME={staff:'Nhân viên',leader:'Lãnh đạo',admin:'Quản trị'};
@@ -196,19 +196,22 @@ function addBtn(k){
 }
 function seedBtn(){ return (!items.length&&role==='admin')?'<p class="muted">Chưa có dữ liệu.</p><button class="btn" onclick="seedAll()">Nạp danh mục ban đầu</button>':''; }
 
+const SUBS=['Máy thở (xâm nhập)','HFNC (không xâm nhập)','Bơm tiêm điện'];
+const subOf=x=>/bơm tiêm điện/i.test(x.name||'')?SUBS[2]:/HFNC/i.test(x.name||'')?SUBS[1]:SUBS[0];
 const itemsOf=k=>k==='mt'?items.filter(x=>x.kind==='equip'&&x.group==='Máy thở'):k==='equip'?items.filter(x=>x.kind==='equip'&&x.group!=='Máy thở'):items.filter(x=>x.kind===k);
 function listHTML(k){
   const f=F[k], all=itemsOf(k);
-  const groups=[...new Set(all.map(x=>x.group).filter(Boolean))].sort();
+  const gOf=x=>k==='mt'?subOf(x):x.group;
+  const groups=k==='mt'?SUBS.filter(g=>all.some(x=>subOf(x)===g)):[...new Set(all.map(x=>x.group).filter(Boolean))].sort();
   const chip=(v,l)=>`<button class="fbtn ${f===v?'on':''}" onclick="setF('${k}',decodeURIComponent('${encodeURIComponent(v)}'))">${esc(l)}</button>`;
   const nWarn=all.filter(attention).length;
   const chips=[chip('all','Tất cả'),...groups.map(g=>chip('g:'+g,g)),chip('warn','Cần chú ý'+(nWarn?` (${nWarn})`:''))].join(' ');
-  const list=all.filter(x=>f==='all'||(f==='warn'&&attention(x))||(f.startsWith('g:')&&x.group===f.slice(2)))
+  const list=all.filter(x=>f==='all'||(f==='warn'&&attention(x))||(f.startsWith('g:')&&gOf(x)===f.slice(2)))
                 .sort((a,b)=>a.name.localeCompare(b.name,'vi'));
   const hint=k==='mt'?'Bấm tên máy để ghi mượn hoặc cho mượn.':k==='equip'?'Gõ trực tiếp số tổng và số hỏng.':'Gõ trực tiếp cột Nhận và Dùng. Thiếu = Cơ số − Nhận − Dùng.';
   return `<div class="row" style="margin-bottom:8px"><div>${chips}</div>${canWrite()?addBtn(k):''}</div>
     ${k==='mt'?ventBanner():''}${canWrite()?`<div class="muted" style="margin-bottom:6px">${hint}</div>`:''}
-    ${list.length?hdr(k)+list.map(rowHTML).join(''):(seedBtn()||'<p class="muted">Không có mục nào.</p>')}`;
+    ${list.length?(k==='mt'?SUBS.filter(g=>list.some(x=>subOf(x)===g)).map(g=>`<h4 style="margin:12px 0 4px">${g}</h4>`+hdr(k)+list.filter(x=>subOf(x)===g).map(rowHTML).join('')).join(''):hdr(k)+list.map(rowHTML).join('')):(seedBtn()||'<p class="muted">Không có mục nào.</p>')}`;
 }
 
 function tags(x){
@@ -251,7 +254,7 @@ function dashHTML(){
   const restH=rest.map(x=>`<div class="card row"><span>${esc(x.name)} <span class="muted">(${KIND[x.kind]})</span></span><span class="warn">đã dùng ${x.used} ${esc(x.unit||'')}</span></div>`).join('');
   const expH=exp.map(x=>`<div class="card row"><span>${esc(x.name)}</span><span class="${days(x.expiry)<0?'bad':'warn'}">HSD ${esc(x.expiry)}</span></div>`).join('');
   const mtL=items.filter(x=>x.kind==='equip'&&x.group==='Máy thở'), ohL=items.filter(x=>x.kind==='equip'&&x.group!=='Máy thở');
-  const mtH=mtL.length?`<div class="card"><table class="tb"><tr class="muted"><td>Máy</td><td>Tổng</td><td>Dùng</td><td>Hỏng</td><td>Còn lại</td></tr>${mtL.map(x=>`<tr><td>${esc(x.name)}</td><td>${num(x.qty)??'—'}</td><td>${num(x.inUse)||0}</td><td class="${num(x.broken)?'bad':''}">${num(x.broken)||0}</td><td>${free(x)}</td></tr>`).join('')}</table></div>`:'';
+  const mtH=mtL.length?`<div class="card"><table class="tb"><tr class="muted"><td>Máy</td><td>Tổng</td><td>Dùng</td><td>Hỏng</td><td>Còn lại</td></tr>${[...mtL].sort((a,b)=>SUBS.indexOf(subOf(a))-SUBS.indexOf(subOf(b))).map(x=>`<tr><td>${esc(x.name)} <span class="muted">${subOf(x)===SUBS[0]?'':'· '+subOf(x)}</span></td><td>${num(x.qty)??'—'}</td><td>${num(x.inUse)||0}</td><td class="${num(x.broken)?'bad':''}">${num(x.broken)||0}</td><td>${free(x)}</td></tr>`).join('')}</table></div>`:'';
   const ohH=ohL.length?`<div class="card"><table class="tb"><tr class="muted"><td>Máy</td><td>Tổng</td><td>Hỏng</td></tr>${ohL.map(x=>`<tr><td>${esc(x.name)}</td><td>${num(x.qty)??'—'}</td><td class="${num(x.broken)?'bad':''}">${num(x.broken)||0}</td></tr>`).join('')}</table></div>`:'';
   const loanH=ol.map(l=>`<div class="card row"><div><b>${esc(l.itemName)}</b> · SL ${esc(l.qty)}<div class="muted">${l.dir==='out'?'Cho':'Mượn của'} ${pname(l)} · ${esc(l.date)}</div></div>${canWrite()?`<button class="ghost" onclick="returnLoan('${l.id}')">Đã trả</button>`:''}</div>`).join('');
   const logH=logs.slice(0,15).map(l=>`<div class="muted" style="padding:3px 0">${fmt(l.at)} · <b>${esc(l.itemName)}</b> — ${esc(l.text)} (${esc(l.by)})</div>`).join('');
@@ -380,14 +383,15 @@ async function seedAll(){
 /* ---- Bàn giao ca ---- */
 const tmOf=t=>t?(t.toDate?t.toDate():new Date(t)).getTime():0;
 const CATS={drug:'Thuốc',sup:'Vật tư',mt:MTL};
-const catOf=it=>it.kind==='drug'?'Thuốc':it.kind==='sup'?'Vật tư':it.group==='Máy thở'?'Máy thở':'Máy khác';
+const catOf=it=>it.kind==='drug'?'Thuốc':it.kind==='sup'?'Vật tư':it.group==='Máy thở'?(/bơm tiêm điện/i.test(it.name||'')?'Bơm tiêm điện':/HFNC/i.test(it.name||'')?'HFNC (không xâm nhập)':'Máy thở'):'Máy khác';
+const isMtCat=c=>c==='Máy thở'||c==='Bơm tiêm điện'||c==='HFNC (không xâm nhập)';
 const inCat=(x,c)=>c==='mt'?(x.kind==='equip'&&x.group==='Máy thở'):c==='drug'?x.kind==='drug':c==='sup'?x.kind==='sup':false;
 const csvCell=v=>`"${String(v??'').replace(/"/g,'""')}"`;
 const HAND_COLS={other:['Cơ số','Nhận','Dùng','Thiếu'],mt:['Tổng','Đang dùng','Hỏng','Cho mượn','Mượn','Còn lại']};
-const CORD=c=>['Thuốc','Vật tư','Máy thở','Máy khác'].indexOf(c);
-const handCols=it=>catOf(it)==='Máy thở'?HAND_COLS.mt:HAND_COLS.other;
+const CORD=c=>['Thuốc','Vật tư','Máy thở','HFNC (không xâm nhập)','Bơm tiêm điện','Máy khác'].indexOf(c);
+const handCols=it=>isMtCat(catOf(it))?HAND_COLS.mt:HAND_COLS.other;
 function handRowVals(it){
-  return catOf(it)==='Máy thở'?[it.qty??'',it.inUse??'',it.broken??'',it.out||'',it.in||'',it.free??'']
+  return isMtCat(catOf(it))?[it.qty??'',it.inUse??'',it.broken??'',it.out||'',it.in||'',it.free??'']
                               :[it.std??'',it.qty??'',it.used??'',it.short||''];
 }
 const nowDT=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;};
@@ -404,7 +408,7 @@ function handHTML(){
       const cols=handCols(groups[c][0]);
       const rows=groups[c].map(it=>{ const v=handRowVals(it); const bi=cols.indexOf('Thiếu');
         return `<tr><td>${esc(it.name)}</td>${v.map((x,i)=>`<td class="${i===bi&&x?'bad':''}">${esc(x)}</td>`).join('')}</tr>`; }).join('');
-      tables+=`<h4 style="margin:10px 0 4px">${catLabel(c)}</h4><div style="overflow-x:auto"><table class="tb"><tr class="muted"><td>Tên</td>${cols.map(x=>`<td>${x}</td>`).join('')}</tr>${rows}</table></div>${c==='Máy thở'?`<div class="muted" style="margin-top:4px">Máy thở còn lại (không tính HFNC, bơm tiêm điện): <b>${ventStat(groups[c]).free}</b></div>`:''}`;
+      tables+=`<h4 style="margin:10px 0 4px">${catLabel(c)}</h4><div style="overflow-x:auto"><table class="tb"><tr class="muted"><td>Tên</td>${cols.map(x=>`<td>${x}</td>`).join('')}</tr>${rows}</table></div>${c==='Máy thở'?`<div class="muted" style="margin-top:4px">Máy thở còn lại (xâm nhập, không tính HFNC và bơm tiêm điện): <b>${ventStat(groups[c]).free}</b></div>`:''}`;
     }
     const chips=(h.cats||[]).map(c=>`<span class="tag">${CATS[c]||c}</span>`).join(' ');
     return `<details class="card" ${list.length===1?'open':''}><summary>${chips} ${fmtDT(tgOf(h))} · giao <b>${esc(h.giao||'—')}</b> → nhận <b>${esc(h.nhan||'—')}</b></summary>
@@ -454,7 +458,7 @@ function handCsv(d){
     for(const c of Object.keys(groups)){
       row([catLabel(c).toUpperCase()]); row(['Tên','Đơn vị',...handCols(groups[c][0])]);
       for(const it of groups[c]) row([it.name,it.unit,...handRowVals(it)]);
-      if(c==='Máy thở'){ const t=ventStat(groups[c]); row(['Máy thở còn lại (không tính HFNC, bơm tiêm điện)','',t.free]); }
+      if(c==='Máy thở'){ const t=ventStat(groups[c]); row(['Máy thở còn lại (xâm nhập, không tính HFNC và bơm tiêm điện)','',t.free]); }
     }
   });
   return L.join('\r\n');
